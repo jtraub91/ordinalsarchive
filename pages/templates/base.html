@@ -1,0 +1,18 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ordinals Archive</title>
+  </head>
+  <body>
+    <h1>Ordinals Archive</h1>
+    <p>Data disappears from the internet all the time</p>
+    <p>Data inscribed on Bitcoin lasts forever</p>
+    <p>Find it on the bitcoin blockchain </p>
+    <form action="{% url 'search' %}" method="post">
+      <input type="text" placeholder="Search ..."/>
+      <button type="submit">Submit</button>
+      <button type="submit">Random</button>
+    </form>
+  </body>
+</html>
