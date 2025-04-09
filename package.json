@@ -1,0 +1,22 @@
+{
+  "name": "ordinalsarchive",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "build": "npx tailwindcss -i tailwind.css -o ordinalsarchive/static/dist/tailwind.css",
+    "watch": "npx tailwindcss -i tailwind.css -o ordinalsarchive/static/dist/tailwind.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtraub91/ordinalsarchive.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jtraub91/ordinalsarchive/issues"
+  },
+  "homepage": "https://github.com/jtraub91/ordinalsarchive#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.3",
+    "htmx.org": "^1.9.12",
+    "tailwindcss": "^4.1.3"
+  }
+}

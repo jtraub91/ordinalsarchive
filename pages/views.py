@@ -1,10 +1,9 @@
 from django.shortcuts import render
 
 
-# Create your views here.
 def index(request):
-    return render()
-
-
-def search(request):
-    return render(request, "base.html")
+    results = []
+    query = request.GET.get("q")
+    if query:
+        results.append(f"no results found for {query}")
+    return render(request, "base.html", context={"results": results})

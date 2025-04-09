@@ -1,0 +1,26 @@
+@font-face {
+  font-family: "Anton";
+  src: url("../fonts/Anton/Anton-Regular.ttf") format("truetype");
+}
+
+.font-anton {
+  font-family: "Anton", Arial, Helvetica, sans-serif;
+}
+
+.font-cursive {
+  font-family: cursive;
+}
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.search {
+  border: 1px black solid;
+  border-width: 0 0 2px 0;
+  
+}
+
+.search::placeholder {
+  text-align: center;
+}
