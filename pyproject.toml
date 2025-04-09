@@ -21,4 +21,5 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.dev.dependencies]
 black = "25.1.0"
 pre-commit = "^4.2.0"
+ipython = "^9.1.0"
 

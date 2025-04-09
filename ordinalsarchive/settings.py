@@ -29,7 +29,10 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = ["ordinalsarchive.onrender.com"]
+allowed_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", [])
+if allowed_hosts:
+    allowed_hosts = allowed_hosts.split(",")
+ALLOWED_HOSTS = allowed_hosts
 
 
 # Application definition
