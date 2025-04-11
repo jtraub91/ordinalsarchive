@@ -3,12 +3,17 @@
   src: url("../fonts/Anton/Anton-Regular.ttf") format("truetype");
 }
 
+@font-face {
+  font-family: "Anaheim";
+  src: url("../fonts/Anaheim/Anaheim-VariableFont_wght.ttf") format("truetype");
+}
+
 .font-anton {
   font-family: "Anton", Arial, Helvetica, sans-serif;
 }
 
-.font-cursive {
-  font-family: cursive;
+.font-anaheim {
+  font-family: "Anaheim", Arial, Helvetica, sans-serif;
 }
 
 body {

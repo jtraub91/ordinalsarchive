@@ -2,31 +2,34 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ordinals Archive</title>
     <link rel="icon" href="/static/images/favicon.png">
     <link href="/static/dist/tailwind.css" rel="stylesheet">
+    <link href="/static/dist/fontawesome-free/all.min.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
   </head>
   <body>
-    <div class="absolute">
+    <div class="flex">
       <a href="/">
         <h1 class="text-5xl font-anton">Archive</h1>
       </a>
-    </div>
-    <div class="w-screen h-screen flex items-center justify-center">
-    {% if results %}
-      {% for result in results %}
-      <p>{{ result }}</p>
-      {% endfor %}
-    {% else %}
-      <form action="/" method="get">
-        <div class="flex flex-col">
-          <div class="text-xl w-96">
-            <input name="q" class="w-full p-2 border-b-2 border-black" type="text" placeholder="search the Bitcoin blockchain"/>
+      <div class="grow mx-2">
+        <form action="/" method="get" hx-get="/" hx-target="#content">
+          <div class="text-xl">
+            <input hx-trigger="input changed delay:300ms, keyup[key=='Enter']" hx-get="/" hx-target="#content" hx-push-url="true"
+              name="q" 
+              class="w-full p-2 border-b-2 border-black text-center search" 
+              type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
-        </div>
-      </form>
-    {% endif %}
+        </form>
+      </div>
+    </div>
+    <div id="content">
+      {% block content %}
+      {% include "components/results.html" with results=results msg=msg%}
+      {% endblock %}
     </div>
     <script src="/static/dist/htmx.min.js"></script>
   </body>

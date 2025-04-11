@@ -1,0 +1,17 @@
+<div class="mx-2">
+  {% if msg %}
+  <div class="text-xl mt-4">
+    {{ msg }}
+  </div>
+  {% endif %}
+  <div class="flex flex-wrap gap-4">
+    {% for result in results %}
+    <div class="w-48 h-48 border-2 border-black bg-white hover:shadow-black shadow-sm flex">
+      <a href="{{ result.url }}" class="w-full h-full text-center grow flex">
+        <span class="m-auto p-4">{{ result.text }}</span>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
