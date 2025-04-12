@@ -76,6 +76,7 @@ def block(request, blockheaderhash: Optional[str] = None):
         request,
         "block.html",
         context={
+            "blockheight": block_index.blockheight,
             "blockheaderhash": blockheaderhash,
             "blockjson": json.dumps(block_index.dict(), indent=2),
         },
@@ -84,13 +85,19 @@ def block(request, blockheaderhash: Optional[str] = None):
 
 def content(request, content_id):
     content = models.Content.objects.get(id=content_id)
+    if content.block:
+        text = content.block.coinbase_tx_scriptsig_text
+        block = content.block
+    elif content.op_return:
+        text = content.op_return.text
+        block = content.op_return.tx.block
     return render(
         request,
         "content.html",
         context={
-            "text": content.block.coinbase_tx_scriptsig_text,
-            "blockheaderhash": content.block.blockheaderhash,
-            "blockheight": content.block.blockheight,
+            "text": text,
+            "blockheaderhash": block.blockheaderhash,
+            "blockheight": block.blockheight,
             "context": content.context,
         },
     )
