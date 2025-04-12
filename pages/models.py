@@ -9,7 +9,7 @@ class Block(models.Model):
     merkle_root = models.CharField()
     time = models.IntegerField()
     bits = models.CharField()
-    nonce = models.IntegerField()
+    nonce = models.BigIntegerField()
 
     coinbase_tx_scriptsig = models.CharField(
         max_length=200
@@ -17,6 +17,17 @@ class Block(models.Model):
     coinbase_tx_scriptsig_text = models.CharField(
         max_length=200
     )  # utf8 encoded ignoring other chars
+
+    def dict(self):
+        return {
+            "blockheaderhash": self.blockheaderhash,
+            "version": self.version,
+            "prev_blockheaderhash": self.prev_blockheaderhash,
+            "merkle_root_hash": self.merkle_root,
+            "nTime": self.time,
+            "nBits": self.bits,
+            "nNonce": self.nonce,
+        }
 
     def __str__(self):
         return f"<Block height={self.blockheight}, hash={self.blockheaderhash}>"

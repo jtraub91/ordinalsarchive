@@ -23,12 +23,17 @@ class Command(BaseCommand):
     def handle(self, blockheight, backend, **kwargs):
         if backend == "mempool.space":
             ret = {}
+            self.stdout.write(f"Retrieving block {blockheight} from mempool.space...")
             req = requests.get(f"https://mempool.space/api/block-height/{blockheight}")
             blockheaderhash = req.text
             ret["blockheight"] = blockheight
             ret["blockheaderhash"] = blockheaderhash
             req = requests.get(f"https://mempool.space/api/block/{blockheaderhash}/raw")
+            self.stdout.write(f"Retrieved block {blockheight}.")
             block = Block(req.content)
+            self.stdout.write(f"Deserializing block {blockheight} ...")
+            block.dict()
+            self.stdout.write(f"Block {blockheight} deserialized.")
             coinbase_tx_scriptsig = block["txns"][0]["txins"][0]["scriptsig"]
             block_row = models.Block(
                 blockheight=blockheight,
@@ -58,29 +63,36 @@ class Command(BaseCommand):
                     locktime=txn["locktime"],
                     block=block_row,
                 )
+                tx_row.save()
+                self.stdout.write(f"{tx_row} saved to db.")
                 for n, txout_ in enumerate(txn["txouts"]):
                     scriptpubkey = txout_["scriptpubkey"]
                     decoded_script = bits.script.decode_script(
                         bytes.fromhex(scriptpubkey)
                     )
-                    # TODO: validate decoded script is a valid op_return script
                     if "OP_RETURN" in decoded_script:
-                        op_return_row = models.OpReturn(
-                            data=decoded_script[1],
-                            text=bytes.fromhex(decoded_script[1]).decode(
-                                "utf8", "ignore"
-                            ),
-                            txout_n=n,
-                            txout_value=txout_["value"],
-                        )
-                        op_return_row.save()
-                        self.stdout.write(f"{op_return_row} saved to db.")
-                        content_row = models.Content(
-                            context="", op_return=op_return_row
-                        )
-                        content_row.save()
-                        self.stdout.write(f"{content_row} saved to db.")
-                tx_row.save()
-                self.stdout.write(f"{tx_row} saved to db.")
+                        hex_data = [
+                            data
+                            for data in decoded_script
+                            if not data.startswith("OP_")
+                        ]
+                        for data in hex_data:
+                            op_return_row = models.OpReturn(
+                                data=data,
+                                text=bytes.fromhex(data)
+                                .decode("utf8", "ignore")
+                                .replace("\x00", ""),
+                                txout_n=n,
+                                txout_value=txout_["value"],
+                                tx=tx_row,
+                            )
+                            op_return_row.save()
+                            self.stdout.write(f"{op_return_row} saved to db.")
+                            content_row = models.Content(
+                                context="", op_return=op_return_row
+                            )
+                            content_row.save()
+                            self.stdout.write(f"{content_row} saved to db.")
+
         elif backend == "bitcoind":
             raise NotImplementedError

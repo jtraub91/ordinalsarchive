@@ -1,6 +1,7 @@
 import json
 import time
 from django.shortcuts import render
+from typing import Optional
 
 from . import models
 
@@ -40,52 +41,44 @@ def index(request):
             context["msg"] = f"Found 1 result in {duration:.3f} sec for '{query}'"
         else:
             context["msg"] = f"No results found for '{query}'"
-        print(results)
+    else:
+        results = []
+        contents = models.Content.objects.all()
+        for content in contents:
+            if content.op_return:
+                results.append(
+                    {
+                        "text": content.op_return.text,
+                        "url": f"/content/{content.id}",
+                    }
+                )
+            elif content.block:
+                results.append(
+                    {
+                        "text": content.block.coinbase_tx_scriptsig_text,
+                        "url": f"/content/{content.id}",
+                    }
+                )
+        context = {
+            "msg": f"Showing all results. Found {len(results)} in {time.time() - time_start:.3f} sec",
+            "results": results,
+        }
     if request.headers.get("HX-Request"):
         return render(request, "components/results.html", context=context)
     return render(request, "base.html", context=context)
 
 
-def block(request, blockheaderhash):
-    _ = models.Block.objects.get(blockheaderhash=blockheaderhash)
-    j = json.dumps(
-        {
-            "blockheaderhash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-            "version": 1,
-            "prev_blockheaderhash": "0000000000000000000000000000000000000000000000000000000000000000",
-            "merkle_root_hash": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-            "nTime": 1231006505,
-            "nBits": "1d00ffff",
-            "nNonce": 2083236893,
-            "txns": [
-                {
-                    "txid": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-                    "wtxid": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-                    "version": 1,
-                    "txins": [
-                        {
-                            "txid": "0000000000000000000000000000000000000000000000000000000000000000",
-                            "vout": 4294967295,
-                            "scriptsig": "04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73",
-                            "sequence": 4294967295,
-                        }
-                    ],
-                    "txouts": [
-                        {
-                            "value": 5000000000,
-                            "scriptpubkey": "4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac",
-                        }
-                    ],
-                    "locktime": 0,
-                }
-            ],
-        },
-        indent=2,
-    )
+def block(request, blockheaderhash: Optional[str] = None):
+    if blockheaderhash is None:
+        return render(request, "base.html", context={})
+    block_index = models.Block.objects.get(blockheaderhash=blockheaderhash)
     return render(
         request,
         "block.html",
-        context={"blockheaderhash": blockheaderhash, "blockjson": j},
+        context={
+            "blockheaderhash": blockheaderhash,
+            "blockjson": json.dumps(block_index.dict(), indent=2),
+        },
     )
 
 

@@ -23,6 +23,7 @@ from pages import views
 
 urlpatterns = [
     path("", views.index),
+    path("block/", views.block),
     path("block/<str:blockheaderhash>", views.block),
     path("content/<int:content_id>", views.content),
     path("admin/", admin.site.urls),

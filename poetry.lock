@@ -48,7 +48,7 @@ dev = ["black (==22.6.0)", "build", "ipdb", "pip-chill", "pre-commit", "pylint",
 type = "git"
 url = "https://github.com/jtraub91/bits.git"
 reference = "dev"
-resolved_reference = "e6156159c54e1f3cbab9e71268326adfe4ede8f8"
+resolved_reference = "92a547ecfa09d6fb29cccca6687b882b1db933aa"
 
 [[package]]
 name = "black"

@@ -18,9 +18,12 @@ pre-commit install
 
 2. Create database and user
 
+```bash
+sudo -u postgres psql
+```
+
 ```sql
 CREATE DATABASE <dbname>;
 CREATE USER <dbuser> WITH ENCRYPTED PASSWORD <dbpassword>;
-GRANT ALL PRIVILEGES ON DATBASE <dbname> TO <dbuser>;
-GRANT CREATE ON SCHEMA public TO <dbuser>;
+ALTER DATABASE <dbname> OWNER TO <dbuser>;
 ```
