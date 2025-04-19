@@ -7,10 +7,10 @@
     <title>Ordinals Archive</title>
     <link rel="icon" href="/static/images/favicon.png">
     <link href="/static/dist/tailwind.css" rel="stylesheet">
-    <link href="/static/dist/fontawesome-free/all.min.css" rel="stylesheet">
+    <link href="/static/dist/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
   </head>
-  <body>
+  <body class="bg-[#fff3cd] dark:bg-black dark:text-white transition-colors">
     <div class="flex">
       <a href="/">
         <h1 class="text-5xl font-anton">Archive</h1>
@@ -20,21 +20,22 @@
           <div class="text-xl">
             <input hx-trigger="input changed delay:300ms, keyup[key=='Enter']" hx-get="/" hx-target="#content" hx-push-url="true"
               name="q" 
-              class="w-full p-2 border-b-2 border-black text-center search" 
+              class="w-full p-2 border-b-2 border-black dark:border-pink-500 search" 
               type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
         </form>
       </div>
-      <button
-        class="border-2 border-black mx-2 mt-1 p-1 hover:bg-black hover:text-white cursor-pointer">
-        Dark Mode
+      <button title="Toggle dark mode"
+        class="h-8 w-8 m-auto cursor-pointer">
+        <i class="fa-solid fa-moon text-2xl"></i>
       </button>
     </div>
-    <div id="content">
+    <div class="p-4 m-4" id="content">
       {% block content %}
-      {% include "components/results.html" with results=results msg=msg%}
+      {% include "components/results.html" with results=results%}
       {% endblock %}
     </div>
     <script src="/static/dist/htmx.min.js"></script>
+    <script src="/static/js/main.js"></script>
   </body>
 </html>

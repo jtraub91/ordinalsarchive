@@ -1,5 +1,5 @@
 import json
-import time
+from django.core.paginator import Paginator
 from django.shortcuts import render
 from typing import Optional
 
@@ -7,97 +7,112 @@ from . import models
 
 
 def index(request):
-    time_start = time.time()
-    context = {}
+    results = []
     query = request.GET.get("q")
     if query:
-        results = []
-        block_query = models.Block.objects.filter(
-            coinbase_tx_scriptsig_text__search=query
-        )
-        op_return_query = models.OpReturn.objects.filter(text__search=query)
-        if block_query:
-            for block in block_query.all():
-                content = models.Content.objects.filter(block=block).first()
-                results.append(
-                    {
-                        "text": block.coinbase_tx_scriptsig_text,
-                        "url": f"/content/{content.id}",
-                    }
-                )
-        if op_return_query:
-            for op_return in op_return_query.all():
-                content = models.Content.objects.filter(op_return=op_return).first()
-                results.append(
-                    {"text": op_return.text, "url": f"/content/{content.id}"}
-                )
-        context["results"] = results
-        duration = time.time() - time_start
-        if len(results) > 1:
-            context["msg"] = (
-                f"Found {len(results)} results in {duration:.3f} sec for '{query}'"
-            )
-        elif len(results) == 1:
-            context["msg"] = f"Found 1 result in {duration:.3f} sec for '{query}'"
-        else:
-            context["msg"] = f"No results found for '{query}'"
+        txins = models.TxIn.objects.filter(scriptsig_text__search=query).all()
+        txouts = models.TxOut.objects.filter(scriptpubkey_text__search=query).all()
     else:
-        results = []
-        contents = models.Content.objects.all()
-        for content in contents:
-            if content.op_return:
-                results.append(
-                    {
-                        "text": content.op_return.text,
-                        "url": f"/content/{content.id}",
-                    }
-                )
-            elif content.block:
-                results.append(
-                    {
-                        "text": content.block.coinbase_tx_scriptsig_text,
-                        "url": f"/content/{content.id}",
-                    }
-                )
-        context = {
-            "msg": f"Showing all results. Found {len(results)} in {time.time() - time_start:.3f} sec",
-            "results": results,
-        }
+        txins = models.TxIn.objects.filter(scriptsig_text__isnull=False).all()
+        txouts = models.TxOut.objects.filter(scriptpubkey_text__isnull=False).all()
+
+    for txin in txins:
+        results.append(
+            {
+                "text": txin.scriptsig_text,
+                "url": f"/context/{txin.context.id}",
+            }
+        )
+    for txout in txouts:
+        results.append(
+            {
+                "text": txout.scriptpubkey_text,
+                "url": f"/context/{txout.context.id}",
+            }
+        )
+
+    paginator = Paginator(results, 32)
+    page = request.GET.get("page")
+    results = paginator.get_page(page)
+    qd = request.GET.copy()
+    if results.has_next():
+        qd["page"] = results.next_page_number()
+        next_page_url = request.path + "?" + qd.urlencode()
+    else:
+        next_page_url = None
+
     if request.headers.get("HX-Request"):
-        return render(request, "components/results.html", context=context)
-    return render(request, "base.html", context=context)
+        return render(
+            request,
+            "components/results.html",
+            context={"results": results, "next_page_url": next_page_url},
+        )
+    return render(
+        request,
+        "base.html",
+        context={"results": results, "next_page_url": next_page_url},
+    )
 
 
 def block(request, blockheaderhash: Optional[str] = None):
     if blockheaderhash is None:
         return render(request, "base.html", context={})
-    block_index = models.Block.objects.get(blockheaderhash=blockheaderhash)
+    block = models.Block.objects.filter(blockheaderhash=blockheaderhash).first()
     return render(
         request,
         "block.html",
         context={
-            "blockheight": block_index.blockheight,
-            "blockheaderhash": blockheaderhash,
-            "blockjson": json.dumps(block_index.dict(), indent=2),
+            "blockheight": block.blockheight if block else None,
+            "blockheaderhash": block.blockheaderhash,
+            "blockjson": json.dumps(block.dict(), indent=2),
         },
     )
 
 
-def content(request, content_id):
-    content = models.Content.objects.get(id=content_id)
-    if content.block:
-        text = content.block.coinbase_tx_scriptsig_text
-        block = content.block
-    elif content.op_return:
-        text = content.op_return.text
-        block = content.op_return.tx.block
+def context(request, context_id: int):
+    context_row = models.ContextRevision.objects.get(id=context_id)
+    if inscription := context_row.inscription_set.first():
+        content_type = "inscription"
+        content = f"/static/inscriptions/{inscription.filename}"
+        block = inscription.tx.block
+        tx = inscription.tx
+        txout = None
+        txin = inscription.txin
+    elif txin := context_row.txin_set.first():
+        content_type = "txin"
+        content = txin.scriptsig_text
+        block = txin.tx.block
+        tx = txin.tx
+        txout = None
+    elif txout := context_row.txout_set.first():
+        content_type = "txout"
+        content = txout.scriptpubkey_text
+        block = txout.tx.block
+        tx = txout.tx
+        txin = None
+    elif tx := context_row.tx_set.first():
+        content_type = "tx"
+        content = tx.txid
+        block = tx.block
+        txout = None
+        txin = None
+    elif block := context_row.block_set.first():
+        content_type = "block"
+        content = block.blockheaderhash
+        tx = None
+        txout = None
+        txin = None
     return render(
         request,
-        "content.html",
+        "context.html",
         context={
-            "text": text,
-            "blockheaderhash": block.blockheaderhash,
+            "content_type": content_type,
+            "content": content,
+            "context": context_row.text,
             "blockheight": block.blockheight,
-            "context": content.context,
+            "blockheaderhash": block.blockheaderhash,
+            "txid": tx.txid if tx else None,
+            "txout_n": txout.n if txout else None,
+            "txin_n": txin.n if txin else None,
         },
     )

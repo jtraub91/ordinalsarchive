@@ -1,9 +1,12 @@
 import requests
+import bits.crypto
 import bits.script
 from bits.blockchain import Block
-from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from django.conf import settings
+from django.core.management.base import BaseCommand
 
-from pages import models
+import pages.models
 
 
 class Command(BaseCommand):
@@ -22,77 +25,120 @@ class Command(BaseCommand):
 
     def handle(self, blockheight, backend, **kwargs):
         if backend == "mempool.space":
-            ret = {}
             self.stdout.write(f"Retrieving block {blockheight} from mempool.space...")
             req = requests.get(f"https://mempool.space/api/block-height/{blockheight}")
-            blockheaderhash = req.text
-            ret["blockheight"] = blockheight
-            ret["blockheaderhash"] = blockheaderhash
-            req = requests.get(f"https://mempool.space/api/block/{blockheaderhash}/raw")
+            req = requests.get(f"https://mempool.space/api/block/{req.text}/raw")
             self.stdout.write(f"Retrieved block {blockheight}.")
             block = Block(req.content)
             self.stdout.write(f"Deserializing block {blockheight} ...")
-            block.dict()
-            self.stdout.write(f"Block {blockheight} deserialized.")
-            coinbase_tx_scriptsig = block["txns"][0]["txins"][0]["scriptsig"]
-            block_row = models.Block(
-                blockheight=blockheight,
-                blockheaderhash=block["blockheaderhash"],
-                version=block["version"],
-                prev_blockheaderhash=block["prev_blockheaderhash"],
-                merkle_root=block["merkle_root_hash"],
-                time=block["nTime"],
-                bits=block["nBits"],
-                nonce=block["nNonce"],
-                coinbase_tx_scriptsig=coinbase_tx_scriptsig,
-                coinbase_tx_scriptsig_text=bytes.fromhex(coinbase_tx_scriptsig)
-                .decode("utf8", "ignore")
-                .replace("\x00", ""),
-            )
-            block_row.save()
-            self.stdout.write(f"{block_row} saved to db.")
-            content_row = models.Content(context="", block=block_row)
-            content_row.save()
-            self.stdout.write(f"{content_row} saved to db.")
-            txns = block["txns"]
-            for txn in txns:
-                tx_row = models.Tx(
-                    txid=txn["txid"],
-                    wtxid=txn["wtxid"],
-                    version=txn["version"],
-                    locktime=txn["locktime"],
-                    block=block_row,
+            with transaction.atomic():
+                block_row = pages.models.Block(
+                    blockheight=blockheight,
+                    blockheaderhash=block["blockheaderhash"],
+                    version=block["version"],
+                    prev_blockheaderhash=block["prev_blockheaderhash"],
+                    merkle_root=block["merkle_root_hash"],
+                    time=block["nTime"],
+                    bits=block["nBits"],
+                    nonce=block["nNonce"],
                 )
-                tx_row.save()
-                self.stdout.write(f"{tx_row} saved to db.")
-                for n, txout_ in enumerate(txn["txouts"]):
-                    scriptpubkey = txout_["scriptpubkey"]
-                    decoded_script = bits.script.decode_script(
-                        bytes.fromhex(scriptpubkey)
+                block_row.save()
+                self.stdout.write(f"{block_row} saved to db.")
+                for txn_n, txn in enumerate(block["txns"]):
+                    tx_row = pages.models.Tx(
+                        block=block_row,
+                        n=txn_n,
+                        txid=txn["txid"],
+                        wtxid=txn["wtxid"],
+                        version=txn["version"],
+                        locktime=txn["locktime"],
                     )
-                    if "OP_RETURN" in decoded_script:
-                        hex_data = [
-                            data
-                            for data in decoded_script
-                            if not data.startswith("OP_")
-                        ]
-                        for data in hex_data:
-                            op_return_row = models.OpReturn(
-                                data=data,
-                                text=bytes.fromhex(data)
+                    tx_row.save()
+                    self.stdout.write(f"{tx_row} saved to db.")
+                    for txin_n, txin in enumerate(txn["txins"]):
+                        txin_row = pages.models.TxIn(
+                            tx=tx_row,
+                            n=txin_n,
+                            txid=txin["txid"],
+                            vout=txin["vout"],
+                            # only store script sig text of coinbase tx
+                            scriptsig_text=(
+                                bytes.fromhex(txin["scriptsig"])
                                 .decode("utf8", "ignore")
-                                .replace("\x00", ""),
-                                txout_n=n,
-                                txout_value=txout_["value"],
-                                tx=tx_row,
-                            )
-                            op_return_row.save()
-                            self.stdout.write(f"{op_return_row} saved to db.")
-                            content_row = models.Content(
-                                context="", op_return=op_return_row
-                            )
-                            content_row.save()
-                            self.stdout.write(f"{content_row} saved to db.")
+                                .replace("\x00", "")
+                                if txn_n == 0
+                                else None
+                            ),
+                            sequence=txin["sequence"],
+                        )
+                        txin_row.save()
+                        self.stdout.write(f"{txin_row} saved to db.")
+
+                    for txout_n, txout in enumerate(txn["txouts"]):
+                        scriptpubkey = txout["scriptpubkey"]
+                        decoded_script = bits.script.decode_script(
+                            bytes.fromhex(scriptpubkey)
+                        )
+                        txout_row = pages.models.TxOut(
+                            tx=tx_row,
+                            n=txout_n,
+                            scriptpubkey=(
+                                bytes.fromhex(scriptpubkey)
+                                if "OP_RETURN" in decoded_script
+                                else None
+                            ),
+                            scriptpubkey_text=(
+                                bytes.fromhex(decoded_script[1])
+                                .decode("utf8", "ignore")
+                                .replace("\x00", "")
+                                if "OP_RETURN" in decoded_script
+                                else None
+                            ),
+                            value=txout["value"],
+                        )
+                        txout_row.save()
+                        self.stdout.write(f"{txout_row} saved to db.")
+
+                    for txin_n, txin_witness_stack in enumerate(
+                        txn.get("witnesses", [])
+                    ):
+                        for elem in txin_witness_stack:
+                            if b"\x00\x63\x03ord" in elem:
+                                envelope = elem.split(b"\x00\x63\x03ord")[1]
+                                if envelope[0:1] != b"\x01":
+                                    continue
+                                if envelope[1:2] != b"\x01":
+                                    continue
+                                envelope = envelope[2:]
+                                content_type_len, envelope = (
+                                    bits.parse_compact_size_uint(envelope)
+                                )
+                                content_type = envelope[:content_type_len].decode(
+                                    "utf8"
+                                )
+                                envelope = envelope[content_type_len:]
+                                decoded = bits.script.decode_script(envelope)
+                                data = "".join(decoded[1:-1])
+                                data = bytes.fromhex(data)
+                                # TODO: ^ this logic sorta flaky and will fail for cursed inscriptions
+                                filename = f"{bits.crypto.hash256(data).hex()}.{content_type.split('/')[1]}"
+                                with open(
+                                    settings.INSCRIPTIONS_DIR / filename, "wb"
+                                ) as f:
+                                    f.write(data)
+                                self.stdout.write(
+                                    f"{filename} saved to {settings.INSCRIPTIONS_DIR}"
+                                )
+                                inscription_row = pages.models.Inscription(
+                                    content_type=content_type,
+                                    content_size=len(data),
+                                    filename=filename,
+                                    txin=pages.models.TxIn.objects.get(
+                                        tx=tx_row, n=txin_n
+                                    ),
+                                )
+                                inscription_row.save()
+                                self.stdout.write(f"{inscription_row} saved to db.")
 
         elif backend == "bitcoind":
             raise NotImplementedError
