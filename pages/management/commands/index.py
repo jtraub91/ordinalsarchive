@@ -1,3 +1,5 @@
+from mimetypes import guess_extension
+
 import requests
 import bits.crypto
 import bits.script
@@ -7,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 import pages.models
+from pages.utils import parse_inscriptions
 
 
 class Command(BaseCommand):
@@ -75,24 +78,19 @@ class Command(BaseCommand):
                         self.stdout.write(f"{txin_row} saved to db.")
 
                     for txout_n, txout in enumerate(txn["txouts"]):
-                        scriptpubkey = txout["scriptpubkey"]
-                        decoded_script = bits.script.decode_script(
-                            bytes.fromhex(scriptpubkey)
-                        )
+                        scriptpubkey = bytes.fromhex(txout["scriptpubkey"])
                         txout_row = pages.models.TxOut(
                             tx=tx_row,
                             n=txout_n,
                             scriptpubkey=(
-                                bytes.fromhex(scriptpubkey)
-                                if "OP_RETURN" in decoded_script
+                                scriptpubkey
+                                if scriptpubkey[0] == 0x6A  # OP_RETURN
                                 else None
                             ),
                             scriptpubkey_text=(
-                                bytes.fromhex(decoded_script[1])
+                                scriptpubkey[1:]
                                 .decode("utf8", "ignore")
                                 .replace("\x00", "")
-                                if "OP_RETURN" in decoded_script
-                                else None
                             ),
                             value=txout["value"],
                         )
@@ -102,36 +100,30 @@ class Command(BaseCommand):
                     for txin_n, txin_witness_stack in enumerate(
                         txn.get("witnesses", [])
                     ):
+                        self.stdout.write(
+                            f"Parsing witness for txin {txin_n} from txn {txn_n} of block {blockheight} ..."
+                        )
                         for elem in txin_witness_stack:
-                            if b"\x00\x63\x03ord" in elem:
-                                envelope = elem.split(b"\x00\x63\x03ord")[1]
-                                if envelope[0:1] != b"\x01":
-                                    continue
-                                if envelope[1:2] != b"\x01":
-                                    continue
-                                envelope = envelope[2:]
-                                content_type_len, envelope = (
-                                    bits.parse_compact_size_uint(envelope)
+                            inscriptions = parse_inscriptions(elem)
+                            for inscription in inscriptions:
+                                ext = guess_extension(
+                                    inscription["content_type"].split(";")[0]
                                 )
-                                content_type = envelope[:content_type_len].decode(
-                                    "utf8"
-                                )
-                                envelope = envelope[content_type_len:]
-                                decoded = bits.script.decode_script(envelope)
-                                data = "".join(decoded[1:-1])
-                                data = bytes.fromhex(data)
-                                # TODO: ^ this logic sorta flaky and will fail for cursed inscriptions
-                                filename = f"{bits.crypto.hash256(data).hex()}.{content_type.split('/')[1]}"
+                                if not ext:
+                                    raise ValueError(
+                                        f"Couldn't guess extension for {inscription['content_type']}"
+                                    )
+                                filename = f"{bits.crypto.hash256(inscription['data']).hex()}{ext}"
                                 with open(
                                     settings.INSCRIPTIONS_DIR / filename, "wb"
                                 ) as f:
-                                    f.write(data)
+                                    f.write(inscription["data"])
                                 self.stdout.write(
                                     f"{filename} saved to {settings.INSCRIPTIONS_DIR}"
                                 )
                                 inscription_row = pages.models.Inscription(
-                                    content_type=content_type,
-                                    content_size=len(data),
+                                    content_type=inscription["content_type"],
+                                    content_size=len(inscription["data"]),
                                     filename=filename,
                                     txin=pages.models.TxIn.objects.get(
                                         tx=tx_row, n=txin_n

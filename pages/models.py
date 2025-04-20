@@ -111,7 +111,7 @@ class TxOut(models.Model):
 
 
 class Inscription(models.Model):
-    number = models.IntegerField()
+    number = models.IntegerField(null=True)
     content_type = models.CharField()
     content_size = models.IntegerField()
     filename = models.CharField()
@@ -127,4 +127,4 @@ class Inscription(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"<Inscription number={self.number}>"
+        return f"<Inscription id={self.id} number={self.number}>"

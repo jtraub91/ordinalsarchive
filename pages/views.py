@@ -1,5 +1,6 @@
 import json
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.shortcuts import render
 from typing import Optional
 
@@ -10,33 +11,38 @@ def index(request):
     results = []
     query = request.GET.get("q")
     if query:
-        txins = models.TxIn.objects.filter(scriptsig_text__search=query).all()
-        txouts = models.TxOut.objects.filter(scriptpubkey_text__search=query).all()
+        objects = models.ContextRevision.objects.filter(
+            Q(txin__scriptsig_text__search=query)
+            | Q(txout__scriptpubkey_text__search=query)
+            | Q(inscription__filename__icontains=query)
+            | Q(inscription__content_type__icontains=query)
+        ).order_by("-id")
     else:
-        txins = models.TxIn.objects.filter(scriptsig_text__isnull=False).all()
-        txouts = models.TxOut.objects.filter(scriptpubkey_text__isnull=False).all()
+        objects = models.ContextRevision.objects.filter(
+            Q(inscription__isnull=False)
+        ).order_by("-id")
 
-    for txin in txins:
-        results.append(
-            {
-                "text": txin.scriptsig_text,
-                "url": f"/context/{txin.context.id}",
-            }
-        )
-    for txout in txouts:
-        results.append(
-            {
-                "text": txout.scriptpubkey_text,
-                "url": f"/context/{txout.context.id}",
-            }
-        )
-
-    paginator = Paginator(results, 32)
+    paginator = Paginator(objects, 32)
     page = request.GET.get("page")
-    results = paginator.get_page(page)
+    page_objects = paginator.get_page(page)
+
+    for obj in page_objects:
+        inscription = obj.inscription_set.first()
+        results.append(
+            {
+                "text": str(obj),
+                "url": f"/context/{obj.id}",
+                "src": (
+                    f"/static/inscriptions/{inscription.filename}"
+                    if inscription
+                    else None
+                ),
+            }
+        )
+
     qd = request.GET.copy()
-    if results.has_next():
-        qd["page"] = results.next_page_number()
+    if page_objects.has_next():
+        qd["page"] = page_objects.next_page_number()
         next_page_url = request.path + "?" + qd.urlencode()
     else:
         next_page_url = None
@@ -74,8 +80,8 @@ def context(request, context_id: int):
     if inscription := context_row.inscription_set.first():
         content_type = "inscription"
         content = f"/static/inscriptions/{inscription.filename}"
-        block = inscription.tx.block
-        tx = inscription.tx
+        block = inscription.txin.tx.block
+        tx = inscription.txin.tx
         txout = None
         txin = inscription.txin
     elif txin := context_row.txin_set.first():

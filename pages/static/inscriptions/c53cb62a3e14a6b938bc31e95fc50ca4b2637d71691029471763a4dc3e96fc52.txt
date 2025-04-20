@@ -1,0 +1,1 @@
+{"p":"brc-20","op":"transfer","tick":"SocFi","amt":"100"}

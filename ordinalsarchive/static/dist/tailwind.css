@@ -188,6 +188,9 @@
   }
 }
 @layer utilities {
+  .pointer-events-none {
+    pointer-events: none;
+  }
   .collapse {
     visibility: collapse;
   }
@@ -244,9 +247,6 @@
       max-width: 96rem;
     }
   }
-  .m-2 {
-    margin: calc(var(--spacing) * 2);
-  }
   .m-4 {
     margin: calc(var(--spacing) * 4);
   }
@@ -258,9 +258,6 @@
   }
   .mx-auto {
     margin-inline: auto;
-  }
-  .my-2 {
-    margin-block: calc(var(--spacing) * 2);
   }
   .my-4 {
     margin-block: calc(var(--spacing) * 4);
@@ -576,12 +573,6 @@
           --tw-shadow-color: color-mix(in oklab, var(--color-black) var(--tw-shadow-alpha), transparent);
         }
       }
-    }
-  }
-  .dark\:border-t {
-    &:where(.dark, .dark *) {
-      border-top-style: var(--tw-border-style);
-      border-top-width: 1px;
     }
   }
   .dark\:border-lime-400 {

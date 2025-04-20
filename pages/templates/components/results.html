@@ -5,13 +5,21 @@
     <div hx-trigger="revealed" hx-swap="beforeend" hx-target="#content" hx-get="{{ next_page_url }}"
       class="w-48 h-48 border-2 border-black dark:border-lime-400 bg-white hover:shadow-black shadow-sm flex items-center justify-center">
       <a href="{{ result.url }}" class="w-full h-full text-center grow flex items-center justify-center">
+        {% if result.src %}
+        <iframe src="{{ result.src }}" class="w-full h-full pointer-events-none" scrolling="no" sandbox="allow-scripts"></iframe>
+        {% else %}
         <span class="m-auto p-4 line-clamp-4">{{ result.text }}</span>
+        {% endif %}
       </a>
     </div>
     {% else %}
     <div class="w-48 h-48 border-2 border-black dark:border-lime-400 bg-white hover:shadow-black shadow-sm flex items-center justify-center">
       <a href="{{ result.url }}" class="w-full h-full text-center grow flex items-center justify-center">
+        {% if result.src %}
+        <iframe src="{{ result.src }}" class="w-full h-full pointer-events-none" scrolling="no" sandbox="allow-scripts"></iframe>
+        {% else %}
         <span class="m-auto p-4 line-clamp-4">{{ result.text }}</span>
+        {% endif %}
       </a>
     </div>
     {% endif %}

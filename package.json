@@ -1,10 +1,9 @@
 {
   "name": "ordinalsarchive",
   "version": "0.1.0",
-  "description": "",
   "scripts": {
-    "build": "npx tailwindcss -i tailwind.css -o ordinalsarchive/static/dist/tailwind.css",
-    "watch": "npx tailwindcss -i tailwind.css -o ordinalsarchive/static/dist/tailwind.css --watch"
+    "tailwind-build": "npx tailwindcss -i tailwind.css -o ordinalsarchive/static/dist/tailwind.css",
+    "tailwind-watch": "npx tailwindcss -i tailwind.css -o ordinalsarchive/static/dist/tailwind.css --watch"
   },
   "repository": {
     "type": "git",
