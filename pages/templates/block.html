@@ -20,10 +20,10 @@
               onclick="navigator.clipboard.writeText(document.getElementById('json-content').innerText)">
       </button>
     </div>
-    <div class="bg-black">
+    <div class="border border-gray-300 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 text-black dark:text-green-400">
       <div class="overflow-auto">
         <pre id="json-content" 
-          class="m-4 text-green-400 font-mono text-sm whitespace-pre">{{ blockjson|safe }}</pre>
+          class="m-4 font-mono text-sm whitespace-pre">{{ blockjson|safe }}</pre>
       </div>
     </div>
   </div>

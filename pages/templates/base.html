@@ -9,27 +9,124 @@
     <link href="/static/dist/tailwind.css" rel="stylesheet">
     <link href="/static/dist/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
+
+    <script>
+      (function() {
+        const userPref = localStorage.getItem('theme');
+        const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (userPref === 'dark' || (!userPref && systemPref)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[#fff3cd] dark:bg-black dark:text-white transition-colors">
-    <div class="flex">
-      <a href="/">
-        <h1 class="text-5xl font-anton">Archive</h1>
-      </a>
-      <div class="grow ml-2">
-        <form action="/" method="get" hx-get="/" hx-target="#content">
-          <div class="text-xl">
-            <input hx-trigger="input changed delay:300ms, keyup[key=='Enter']" hx-get="/" hx-target="#content" hx-push-url="true"
-              name="q" 
-              class="w-full p-2 border-b-2 border-black dark:border-pink-500 search" 
-              type="text" placeholder="search the Bitcoin blockchain"/>
+    <canvas id="bg-canvas" class="hidden dark:block fixed top-0 left-0 -z-10 pointer-events-none"></canvas>
+    <form action="/" method="get" hx-get="/" hx-target="#content" hx-push-url="true" hx-trigger="change from:form">
+      <div class="flex">
+        <div>
+          <a href="/">
+            <h1 class="text-5xl font-anton">Archive</h1>
+          </a>
+          <div class="cursor-pointer flex" id="filters_toggle">
+            <label for="filters" class="cursor-pointer">
+              <i class="fa-solid fa-list my-auto"></i>
+              <span>Filters</span>
+            </label>
           </div>
-        </form>
+          <div id="filters" class="hidden absolute">
+            <ol>
+              <li>
+                <div>Object Type</div>
+                <ul>
+                  {% for object_type in object_types %}
+                  <li>
+                    <input 
+                      {% if object_type|lower in request.GET.getlist.object_type %}checked{% endif %}
+                      type="checkbox"
+                      name="object_type"
+                      value="{{ object_type|lower }}" 
+                      id="object_type">
+                    <label for="{{ object_type|lower }}">
+                      {{ object_type }}
+                    </label>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </li>
+              <li>
+                <div>Content Type</div>
+                <ul>
+                  {% for content_type in content_types %}
+                  <li>
+                    <input
+                      {% if content_type|lower in request.GET.getlist.content_type %}checked{% endif %} 
+                      type="checkbox"
+                      name="content_type"
+                      value="{{ content_type }}" 
+                      id="content_type">
+                    <label for="content_type">
+                      {{ content_type }}
+                    </label>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </li>
+            </ol>
+          </div>
+        </div>
+        <div class="grow ml-2">
+            <div class="text-xl">
+              <input 
+                value="{{ request.GET.q|default_if_none:'' }}"
+                hx-get="/"
+                hx-target="#content"
+                hx-push-url="true"
+                hx-trigger="input changed, keyup[key=='Enter']"
+                name="q"
+                class="w-full p-2 border-b-2 border-black dark:border-pink-500 placeholder:text-center placeholder:text-gray-700 dark:placeholder:text-gray-300 dark:placeholder:text-center" 
+                type="text" placeholder="search the Bitcoin blockchain"/>
+            </div>
+            <div class="flex flex-row justify-between">
+              <div class="flex flex-row">
+                <label for="sort_select">
+                  Sort
+                </label>
+                <select name="sort" id="sort_select">
+                  <option value="relevance">Relevance</option>
+                  <option value="date">Date</option>
+                </select>
+                <div class="hidden">
+                  <label for="order_select">
+                    Order
+                  </label>
+                  <select name="order" id="order_select">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </div>
+                <i class="fa-solid fa-arrow-up cursor-pointer" id="order_toggle"></i>
+              </div>
+              <div>
+                <label for="view_select">
+                  View
+                </label>
+                <select name="view" id="view_select">
+                  <option value="gallery">Gallery</option>
+                  <option value="list">List</option>
+                </select>
+              </div>
+            </div>
+          
+        </div>
+        <div title="Toggle dark mode" id="darkmode_toggle"
+          class="cursor-pointer">
+          <i class="fa-solid fa-moon text-5xl mx-2"></i>
+        </div>
       </div>
-      <button title="Toggle dark mode"
-        class="m-auto cursor-pointer">
-        <i class="fa-solid fa-moon text-5xl mx-2"></i>
-      </button>
-    </div>
+    </form>
     <div class="p-4 m-4" id="content">
       {% block content %}
       {% include "components/results.html" with results=results%}

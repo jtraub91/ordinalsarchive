@@ -113,18 +113,27 @@ class Command(BaseCommand):
                                     raise ValueError(
                                         f"Couldn't guess extension for {inscription['content_type']}"
                                     )
-                                filename = f"{bits.crypto.hash256(inscription['data']).hex()}{ext}"
-                                with open(
-                                    settings.INSCRIPTIONS_DIR / filename, "wb"
-                                ) as f:
-                                    f.write(inscription["data"])
-                                self.stdout.write(
-                                    f"{filename} saved to {settings.INSCRIPTIONS_DIR}"
-                                )
+                                if (
+                                    ext in [".txt", ".html", ".es"]
+                                    and len(inscription["data"]) < 2**16
+                                ):  # 64KB
+                                    text = inscription["data"].decode("utf8")
+                                    filename = None
+                                else:
+                                    text = None
+                                    filename = f"{bits.crypto.hash256(inscription['data']).hex()}{ext}"
+                                    with open(
+                                        settings.INSCRIPTIONS_DIR / filename, "wb"
+                                    ) as f:
+                                        f.write(inscription["data"])
+                                    self.stdout.write(
+                                        f"{filename} saved to {settings.INSCRIPTIONS_DIR}"
+                                    )
                                 inscription_row = pages.models.Inscription(
                                     content_type=inscription["content_type"],
                                     content_size=len(inscription["data"]),
                                     filename=filename,
+                                    text=text,
                                     txin=pages.models.TxIn.objects.get(
                                         tx=tx_row, n=txin_n
                                     ),

@@ -1,1 +1,0 @@
-{"p":"brc-20","op":"transfer","tick":"DFQ  ","amt":"25000"}

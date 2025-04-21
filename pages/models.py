@@ -114,7 +114,8 @@ class Inscription(models.Model):
     number = models.IntegerField(null=True)
     content_type = models.CharField()
     content_size = models.IntegerField()
-    filename = models.CharField()
+    filename = models.CharField(null=True)
+    text = models.TextField(null=True)
 
     txin = models.ForeignKey(TxIn, on_delete=models.CASCADE)
 

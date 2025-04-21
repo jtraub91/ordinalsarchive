@@ -1,1 +1,0 @@
-{"p":"brc-20","op":"deploy","tick":"vsjl","lim":"1000","max":"21000000"}
