@@ -16,25 +16,61 @@ def index(request):
     view = request.GET.get("view", "gallery")
     query = request.GET.get("q")
 
+    # Get all possible object types/content types
+    all_object_types = ["inscription", "txin", "txout", "tx", "block"]
+    all_content_types = list(
+        models.Inscription.objects.values_list("content_type", flat=True).distinct()
+    )
+
+    # If all or none object types are selected, treat as no filtering
+    if not object_types or set(object_types) == set(all_object_types):
+        object_types = all_object_types
+    # If inscription is selected but no content types, treat as all content types
+    if "inscription" in object_types:
+        if not content_types or set(content_types) == set(all_content_types):
+            content_types = all_content_types
+    else:
+        content_types = []  # Ignore content types if inscription not selected
+
     filter_query = Q()
     for object_type in object_types:
         if object_type == "inscription":
+            # If inscription, filter by all selected content types
+            ct_q = Q()
             for content_type in content_types:
-                filter_query |= Q(inscription__isnull=False) & Q(
+                ct_q |= Q(inscription__isnull=False) & Q(
                     inscription__content_type=content_type
                 )
+            filter_query |= ct_q
         else:
             kwarg = {f"{object_type}__isnull": False}
             filter_query |= Q(**kwarg)
 
-    objects = models.ContextRevision.objects.filter(filter_query).order_by("-id")
+    # If nothing selected, show all
+    if not filter_query.children:
+        filter_query = Q()
 
+    # Main queryset
+    objects = models.ContextRevision.objects.filter(filter_query)
+
+    # Apply search query as AND
     if query:
-        filter_query |= Q(txin__scriptsig_text__search=query)
-        filter_query |= Q(txout__scriptpubkey_text__search=query)
-        filter_query |= Q(inscription__filename__icontains=query)
-        filter_query |= Q(inscription__content_type__icontains=query)
-        objects = models.ContextRevision.objects.filter(filter_query)
+        q_filter = (
+            Q(txin__scriptsig_text__icontains=query)
+            | Q(txout__scriptpubkey_text__icontains=query)
+            | Q(inscription__filename__icontains=query)
+            | Q(inscription__content_type__icontains=query)
+            | Q(inscription__text__icontains=query)
+            | Q(text__icontains=query)
+        )
+        objects = objects.filter(q_filter)
+
+    # Sorting (default to date for now)
+    if sort == "date":
+        objects = objects.order_by("-id" if order == "desc" else "id")
+    else:
+        # Placeholder for relevance (use date for now)
+        objects = objects.order_by("-id" if order == "desc" else "id")
 
     paginator = Paginator(objects, 24)
     page = request.GET.get("page")
@@ -73,11 +109,21 @@ def index(request):
     else:
         next_page_url = None
 
+    query_object_types = request.GET.getlist("object_type")
+    query_content_types = request.GET.getlist("content_type")
+
     if request.headers.get("HX-Request"):
         return render(
             request,
             "components/results.html",
-            context={"results": results, "next_page_url": next_page_url},
+            context={
+                "results": results,
+                "next_page_url": next_page_url,
+                "object_types": ["Inscription", "TxIn", "TxOut", "Tx", "Block"],
+                "content_types": content_types,
+                "query_object_types": query_object_types,
+                "query_content_types": query_content_types,
+            },
         )
     content_types = models.Inscription.objects.values_list(
         "content_type", flat=True
@@ -90,6 +136,9 @@ def index(request):
             "next_page_url": next_page_url,
             "object_types": ["Inscription", "TxIn", "TxOut", "Tx", "Block"],
             "content_types": content_types,
+            "view": view,
+            "query_object_types": query_object_types,
+            "query_content_types": query_content_types,
         },
     )
 

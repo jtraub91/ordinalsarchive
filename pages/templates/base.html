@@ -36,41 +36,54 @@
               <span>Filters</span>
             </label>
           </div>
-          <div id="filters" class="hidden absolute">
+          <div id="filters" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-semibold">Filters</span>
+              <button type="button" id="filters_close" aria-label="Close filters" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
+            </div>
             <ol>
               <li>
-                <div>Object Type</div>
                 <ul>
-                  {% for object_type in object_types %}
                   <li>
                     <input 
-                      {% if object_type|lower in request.GET.getlist.object_type %}checked{% endif %}
+                      {% if 'inscription' in query_object_types %}checked{% endif %}
                       type="checkbox"
                       name="object_type"
-                      value="{{ object_type|lower }}" 
-                      id="object_type">
-                    <label for="{{ object_type|lower }}">
-                      {{ object_type }}
+                      value="inscription" 
+                      id="object_type_inscription">
+                    <label for="object_type_inscription" class="font-normal pr-2">
+                      Inscription
                     </label>
+                    <ul class="ml-3">
+                      {% for content_type in content_types %}
+                      <li>
+                        <input
+                          {% if content_type|lower in query_content_types %}checked{% endif %}
+                          type="checkbox"
+                          name="content_type"
+                          value="{{ content_type }}" 
+                          id="content_type_{{ forloop.counter }}">
+                        <label for="content_type_{{ forloop.counter }}">
+                          {{ content_type }}
+                        </label>
+                      </li>
+                      {% endfor %}
+                    </ul>
                   </li>
-                  {% endfor %}
-                </ul>
-              </li>
-              <li>
-                <div>Content Type</div>
-                <ul>
-                  {% for content_type in content_types %}
-                  <li>
-                    <input
-                      {% if content_type|lower in request.GET.getlist.content_type %}checked{% endif %} 
-                      type="checkbox"
-                      name="content_type"
-                      value="{{ content_type }}" 
-                      id="content_type">
-                    <label for="content_type">
-                      {{ content_type }}
-                    </label>
-                  </li>
+                  {% for object_type in object_types %}
+                    {% if object_type|lower != 'inscription' %}
+                    <li>
+                      <input 
+                        {% if object_type|lower in query_object_types %}checked{% endif %}
+                        type="checkbox"
+                        name="object_type"
+                        value="{{ object_type|lower }}" 
+                        id="object_type_{{ object_type|lower }}">
+                      <label for="object_type_{{ object_type|lower }}">
+                        {{ object_type }}
+                      </label>
+                    </li>
+                    {% endif %}
                   {% endfor %}
                 </ul>
               </li>
@@ -94,17 +107,17 @@
                 <label for="sort_select">
                   Sort
                 </label>
-                <select name="sort" id="sort_select">
-                  <option value="relevance">Relevance</option>
-                  <option value="date">Date</option>
+                <select name="sort" id="sort_select" class="bg-white dark:bg-zinc-900 text-black dark:text-white border border-gray-300 dark:border-zinc-700">
+                  <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>Relevance</option>
+                  <option value="date" {% if request.GET.sort == "date" %}selected{% endif %}>Date</option>
                 </select>
                 <div class="hidden">
                   <label for="order_select">
                     Order
                   </label>
                   <select name="order" id="order_select">
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
+                    <option value="asc" {% if request.GET.order == "asc" %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if request.GET.order == "desc" %}selected{% endif %}>Descending</option>
                   </select>
                 </div>
                 <i class="fa-solid fa-arrow-up cursor-pointer" id="order_toggle"></i>
@@ -113,9 +126,9 @@
                 <label for="view_select">
                   View
                 </label>
-                <select name="view" id="view_select">
-                  <option value="gallery">Gallery</option>
-                  <option value="list">List</option>
+                <select name="view" id="view_select" class="bg-white dark:bg-zinc-900 text-black dark:text-white border border-gray-300 dark:border-zinc-700">
+                  <option value="gallery" {% if request.GET.view == "gallery" %}selected{% endif %}>Gallery</option>
+                  <option value="list" {% if request.GET.view == "list" %}selected{% endif %}>List</option>
                 </select>
               </div>
             </div>

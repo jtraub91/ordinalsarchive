@@ -10,6 +10,7 @@ python3 -m venv venv
 python -m pip install -U pip poetry
 poetry install
 pre-commit install
+npm install
 ```
 
 ## DB Setup

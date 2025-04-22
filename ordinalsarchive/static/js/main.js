@@ -68,3 +68,11 @@ if (document.documentElement.classList.contains('dark')) {
 
 // Redraw on resize
 window.addEventListener('resize', () => resizeAndDraw(canvas));
+
+// Filters dropdown close button logic
+const filtersCloseBtn = document.getElementById('filters_close');
+if (filtersCloseBtn) {
+  filtersCloseBtn.addEventListener('click', function() {
+    document.getElementById('filters').classList.add('hidden');
+  });
+}
