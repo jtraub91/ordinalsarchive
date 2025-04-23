@@ -6,7 +6,7 @@
       class="w-48 h-48 border-2 border-black dark:border-lime-400 bg-white dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center">
       <a href="{{ result.url }}" class="w-full h-full text-center grow flex items-center justify-center">
         {% if result.src %}
-        <iframe src="{{ result.src }}" class="w-full h-full pointer-events-none" scrolling="no"></iframe>
+        <img src="{{ result.src }}" class="w-full h-full pointer-events-none"/>
         {% else %}
         <span class="m-auto p-4 line-clamp-4 text-black dark:text-white">{{ result.text }}</span>
         {% endif %}
@@ -16,7 +16,7 @@
     <div class="w-48 h-48 border-2 border-gray-700 dark:border-lime-500 bg-[#fdfdfb] dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center">
       <a href="{{ result.url }}" class="w-full h-full text-center grow flex items-center justify-center">
         {% if result.src %}
-        <iframe src="{{ result.src }}" class="w-full h-full pointer-events-none" scrolling="no"></iframe>
+        <img src="{{ result.src }}" class="w-full h-full pointer-events-none"/>
         {% else %}
         <span class="m-auto p-4 line-clamp-4 text-black dark:text-white">{{ result.text }}</span>
         {% endif %}

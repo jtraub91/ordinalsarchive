@@ -26,5 +26,6 @@ urlpatterns = [
     path("block/", views.block),
     path("block/<str:blockheaderhash>", views.block),
     path("context/<int:context_id>", views.context),
+    path("context/revision/<int:context_id>", views.context_revision),
     path("admin/", admin.site.urls),
 ]

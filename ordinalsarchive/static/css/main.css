@@ -19,3 +19,15 @@
 body {
   font-family: 'Courier New', Courier, monospace;
 }
+
+/* Quill editor styles */
+.ql-editor {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  /* resize: vertical; */
+  overflow: auto;
+}
+
+.ql-toolbar {
+  background-color: #18181b;
+}

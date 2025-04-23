@@ -8,6 +8,7 @@
     <link rel="icon" href="/static/images/favicon.png">
     <link href="/static/dist/tailwind.css" rel="stylesheet">
     <link href="/static/dist/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/dist/quill/quill.snow.css" rel="stylesheet">
     <link href="/static/css/main.css" rel="stylesheet">
 
     <script>
@@ -108,8 +109,8 @@
                   Sort
                 </label>
                 <select name="sort" id="sort_select" class="bg-white dark:bg-zinc-900 text-black dark:text-white border border-gray-300 dark:border-zinc-700">
-                  <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>Relevance</option>
                   <option value="date" {% if request.GET.sort == "date" %}selected{% endif %}>Date</option>
+                  <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>Relevance</option>
                 </select>
                 <div class="hidden">
                   <label for="order_select">
@@ -146,6 +147,7 @@
       {% endblock %}
     </div>
     <script src="/static/dist/htmx.min.js"></script>
+    <script src="/static/dist/quill/quill.js"></script>
     <script src="/static/js/main.js"></script>
   </body>
 </html>

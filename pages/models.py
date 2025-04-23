@@ -3,7 +3,7 @@ from django.db import models
 
 
 class ContextRevision(models.Model):
-    text = models.TextField()
+    html = models.TextField()
     prev_revision = models.ForeignKey(
         "self", on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -21,12 +21,12 @@ class Block(models.Model):
     bits = models.CharField()
     nonce = models.BigIntegerField()
 
-    context = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
+    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        if self.context_id is None:
-            self.context = ContextRevision()
-            self.context.save()
+        if self.context_revision_id is None:
+            self.context_revision = ContextRevision()
+            self.context_revision.save()
         super().save(*args, **kwargs)
 
     def dict(self):
@@ -55,12 +55,12 @@ class Tx(models.Model):
     version = models.IntegerField()
     locktime = models.IntegerField()
 
-    context = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
+    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        if self.context_id is None:
-            self.context = ContextRevision()
-            self.context.save()
+        if self.context_revision_id is None:
+            self.context_revision = ContextRevision()
+            self.context_revision.save()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -78,12 +78,12 @@ class TxIn(models.Model):
     scriptsig_text = models.CharField(null=True)
     sequence = models.BigIntegerField()
 
-    context = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
+    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        if self.context_id is None:
-            self.context = ContextRevision()
-            self.context.save()
+        if self.context_revision_id is None:
+            self.context_revision = ContextRevision()
+            self.context_revision.save()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -98,12 +98,12 @@ class TxOut(models.Model):
     scriptpubkey_text = models.CharField(null=True)
     value = models.BigIntegerField()
 
-    context = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
+    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        if self.context_id is None:
-            self.context = ContextRevision()
-            self.context.save()
+        if self.context_revision_id is None:
+            self.context_revision = ContextRevision()
+            self.context_revision.save()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -119,12 +119,12 @@ class Inscription(models.Model):
 
     txin = models.ForeignKey(TxIn, on_delete=models.CASCADE)
 
-    context = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
+    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        if self.context_id is None:
-            self.context = ContextRevision()
-            self.context.save()
+        if self.context_revision_id is None:
+            self.context_revision = ContextRevision()
+            self.context_revision.save()
         super().save(*args, **kwargs)
 
     def __str__(self):

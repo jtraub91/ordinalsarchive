@@ -1,7 +1,8 @@
 import json
+
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from typing import Optional
 
 from . import models
@@ -11,7 +12,7 @@ def index(request):
     results = []
     object_types = request.GET.getlist("object_type")
     content_types = request.GET.getlist("content_type")
-    sort = request.GET.get("sort", "relevance")
+    sort = request.GET.get("sort", "date")
     order = request.GET.get("order", "asc")
     view = request.GET.get("view", "gallery")
     query = request.GET.get("q")
@@ -33,22 +34,18 @@ def index(request):
         content_types = []  # Ignore content types if inscription not selected
 
     filter_query = Q()
-    for object_type in object_types:
-        if object_type == "inscription":
-            # If inscription, filter by all selected content types
-            ct_q = Q()
-            for content_type in content_types:
-                ct_q |= Q(inscription__isnull=False) & Q(
-                    inscription__content_type=content_type
-                )
-            filter_query |= ct_q
-        else:
-            kwarg = {f"{object_type}__isnull": False}
-            filter_query |= Q(**kwarg)
+    # baseline filter - return all but txin / txout with null scriptsig_text / scriptpubkey_text respectively
+    filter_query &= Q(txin__isnull=False) & Q(txin__scriptsig_text__isnull=True)
+    filter_query &= Q(txout__isnull=False) & Q(txout__scriptpubkey_text__isnull=True)
 
-    # If nothing selected, show all
-    if not filter_query.children:
-        filter_query = Q()
+    if "inscription" in object_types:
+        # If inscription, filter by all selected content types
+        ct_q = Q()
+        for content_type in content_types:
+            ct_q |= Q(inscription__isnull=False) & Q(
+                inscription__content_type=content_type
+            )
+        filter_query &= ct_q
 
     # Main queryset
     objects = models.ContextRevision.objects.filter(filter_query)
@@ -61,7 +58,7 @@ def index(request):
             | Q(inscription__filename__icontains=query)
             | Q(inscription__content_type__icontains=query)
             | Q(inscription__text__icontains=query)
-            | Q(text__icontains=query)
+            | Q(html__icontains=query)
         )
         objects = objects.filter(q_filter)
 
@@ -82,7 +79,7 @@ def index(request):
                 text = None
                 src = f"/static/inscriptions/{inscription.filename}"
             else:
-                text = inscription.text
+                text = inscription.html
                 src = None
         elif txin := obj.txin_set.first():
             text = txin.scriptsig_text
@@ -158,15 +155,37 @@ def block(request, blockheaderhash: Optional[str] = None):
     )
 
 
+def context_revision(request, context_id):
+    if request.method == "POST":
+        context_html = request.POST["context_html"]
+        context_ = get_object_or_404(models.ContextRevision, id=context_id)
+        context_.html = context_html
+        context_.save()
+        return render(
+            request,
+            "components/context_editor.html",
+            context={"context_html": context_html, "context_id": context_.id},
+        )
+    else:  # GET
+        context_ = get_object_or_404(models.ContextRevision, id=context_id)
+        return render(
+            request,
+            "components/context_editor.html",
+            context={"context_html": context_.html, "context_id": context_.id},
+        )
+
+
 def context(request, context_id: int):
     context_row = models.ContextRevision.objects.get(id=context_id)
     if inscription := context_row.inscription_set.first():
         object_type = "Inscription"
         if inscription.filename:
-            content = f"/static/inscriptions/{inscription.filename}"
+            content_src = f"/static/inscriptions/{inscription.filename}"
+            content_text = None
             content_size = inscription.content_size
         else:
-            content = inscription.text
+            content_src = None
+            content_text = inscription.html
             content_size = inscription.content_size
         content_type = inscription.content_type
         block = inscription.txin.tx.block
@@ -175,7 +194,8 @@ def context(request, context_id: int):
         txin = inscription.txin
     elif txin := context_row.txin_set.first():
         object_type = "Txin"
-        content = txin.scriptsig_text
+        content_src = None
+        content_text = txin.scriptsig_text
         content_size = len(txin.scriptsig_text) if txin.scriptsig_text else 0
         content_type = "text/plain;charset=utf8"
         block = txin.tx.block
@@ -183,7 +203,8 @@ def context(request, context_id: int):
         txout = None
     elif txout := context_row.txout_set.first():
         object_type = "Txout"
-        content = txout.scriptpubkey_text
+        content_src = None
+        content_text = txout.scriptpubkey_text
         content_size = len(txout.scriptpubkey_text) if txout.scriptpubkey_text else 0
         content_type = "text/plain;charset=utf8"
         block = txout.tx.block
@@ -191,7 +212,8 @@ def context(request, context_id: int):
         txin = None
     elif tx := context_row.tx_set.first():
         object_type = "Tx"
-        content = tx.txid
+        content_src = None
+        content_text = tx.txid
         content_size = len(tx.txid)
         content_type = "text/plain;charset=utf8"
         block = tx.block
@@ -199,7 +221,8 @@ def context(request, context_id: int):
         txin = None
     elif block := context_row.block_set.first():
         object_type = "Block"
-        content = block.blockheaderhash
+        content_src = None
+        content_text = block.blockheaderhash
         content_size = len(block.blockheaderhash)
         content_type = "text/plain;charset=utf8"
         tx = None
@@ -211,9 +234,11 @@ def context(request, context_id: int):
         context={
             "object_type": object_type,
             "content_type": content_type,
-            "content": content,
+            "content_src": content_src,
+            "content_text": content_text,
             "content_size": content_size,
-            "context": context_row.text,
+            "context_html": context_row.html,
+            "context_id": context_row.id,
             "blockheight": block.blockheight,
             "blockheaderhash": block.blockheaderhash,
             "txid": tx.txid if tx else None,
