@@ -20,10 +20,23 @@ def parse_inscriptions(witness_element: bytes) -> List[dict]:
         ]  # skip 'OP_FALSE OP_IF OP_PUSHBYTES3 ord' preamble
 
         while witness_element and witness_element[0] != 104:  # OP_ENDIF
-            # parse the next byte
-            push = witness_element[0]
-            tag = witness_element[1 : 1 + push]
-            witness_element = witness_element[1 + push :]
+            # parse the OP_PUSH and tag
+            if witness_element[0] in range(0x4C):
+                push = witness_element[0]
+                tag = witness_element[1 : 1 + push]
+                witness_element = witness_element[1 + push :]
+            elif witness_element[0] == 0x4C:  # OP_PUSHDATA1
+                push = witness_element[1]
+                tag = witness_element[2 : 2 + push]
+                witness_element = witness_element[2 + push :]
+            elif witness_element[0] == 0x4D:  # OP_PUSHDATA2
+                push = int.from_bytes(witness_element[1:3], "little")
+                tag = witness_element[3 : 3 + push]
+                witness_element = witness_element[3 + push :]
+            else:
+                raise ValueError(
+                    f"Invalid data push while parsing tag: {witness_element[0]}"
+                )
             if tag == b"\x01":
                 # content type
                 push = witness_element[0]

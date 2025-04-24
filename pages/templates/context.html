@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex flex-col w-full items-center justify-center">
+<div class="flex flex-col w-full items-center justify-center min-w-xs">
   <div class="w-full max-w-3xl mt-4 px-4">
     <h2 class="text-3xl font-anaheim">Content</h2>
     <p>Type: {{ object_type }}</p>
@@ -10,30 +10,42 @@
   </div>
 
   <div class="w-full max-w-3xl px-4 mt-4">
-    <div class="border border-gray-300 dark:border-lime-500">
+    <div class="max-w-[576px] w-fit m-auto border border-zinc-900 dark:border-lime-500">
       <!-- Content -->
-      <div class="p-4 text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
-        {{ content }}
+      <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
+        {% if content_text %}
+        <div class="p-4">
+          {{ content_text }}
+        </div>
+        {% elif content_src %}
+        <img src="{{ content_src }}"/>
+        {% else %}
+        No content available
+        {% endif %}
       </div>
     </div>
   </div>
 
   <div class="w-full max-w-3xl px-4 mt-4">
-    <h3 class="text-3xl font-anaheim">Context</h3>
-    <div class="border border-gray-300 dark:border-lime-500">
-      {% if context %}
-      <div class="p-4 text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900">
-        {{ context }}
+    <div class="flex justify-between">
+      <h3 class="text-3xl font-anaheim">Context</h3>
+      <div class="flex gap-2">
+        <button class="flex cursor-pointer" id="context_edit">
+          <span class="my-auto">Edit</span>
+          <i class="fa-solid fa-pen-to-square my-auto"></i>
+        </button>
+        <button class="cursor-pointer hidden" id="context_save">
+          <span class="my-auto">Save</span>
+          <i class="fa-solid fa-bolt my-auto"></i>
+        </button>
+        <button class="cursor-pointer hidden" id="context_cancel">
+          <span class="my-auto">Cancel</span>
+          <i class="fa-solid fa-rotate-left my-auto"></i>
+        </button>
       </div>
-      {% else %}
-      <div class="flex flex-col p-4 text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900">
-        <div>No context available</div>
-        <div>
-          <a href="#" class="text-blue-600 hover:text-blue-800">Sign up</a> to become a contributor
-        </div>
-      </div>
-      {% endif %}
     </div>
+    
+    {% include "components/context_editor.html" %}
   </div>
   
 

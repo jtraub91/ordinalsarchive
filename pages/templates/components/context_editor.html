@@ -1,0 +1,18 @@
+<div class="border border-zinc-900 dark:border-lime-500" id="context_editor_container">
+  <div id="context_editor"
+    class="p-4 text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900">
+      {% if context_html %}
+        {{ context_html|safe }}
+      {% else %}
+        <div>No context available</div>
+      {% endif %}
+  </div>
+  <form class="hidden" 
+    id="context_editor_form"
+    hx-post="/context/revision/{{ context_id }}"
+    hx-target="#context_editor_container"
+    hx-swap="outerHTML">
+    {% csrf_token %}
+    <input type="text" name="context_html" value="{{ context_html }}" id="context_html_input">
+  </form>
+</div>
