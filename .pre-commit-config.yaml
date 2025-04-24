@@ -4,3 +4,11 @@ repos:
     hooks:
       - id: black
         language_version: default
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint --load-plugins pylint_django --django-settings-module=ordinalsarchive.settings
+        language: system
+        types: [python]
+        args: []

@@ -1,4 +1,6 @@
 import json
+import os
+from datetime import datetime, timezone
 
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -10,12 +12,14 @@ from . import models
 
 def index(request):
     results = []
+
+    # query parameters
     object_types = request.GET.getlist("object_type")
     content_types = request.GET.getlist("content_type")
     sort = request.GET.get("sort", "date")
     order = request.GET.get("order", "asc")
     view = request.GET.get("view", "gallery")
-    query = request.GET.get("q")
+    query = request.GET.get("q")  # search query
 
     # Get all possible object types/content types
     all_object_types = ["inscription", "txin", "txout", "tx", "block"]
@@ -34,9 +38,6 @@ def index(request):
         content_types = []  # Ignore content types if inscription not selected
 
     filter_query = Q()
-    # baseline filter - return all but txin / txout with null scriptsig_text / scriptpubkey_text respectively
-    filter_query &= Q(txin__isnull=False) & Q(txin__scriptsig_text__isnull=True)
-    filter_query &= Q(txout__isnull=False) & Q(txout__scriptpubkey_text__isnull=True)
 
     if "inscription" in object_types:
         # If inscription, filter by all selected content types
@@ -46,10 +47,20 @@ def index(request):
                 inscription__content_type=content_type
             )
         filter_query &= ct_q
+    if "txin" in object_types:
+        filter_query |= Q(txin__isnull=False) & Q(txin__scriptsig_text__isnull=False)
+    if "txout" in object_types:
+        filter_query |= Q(txout__isnull=False) & Q(
+            txout__scriptpubkey_text__isnull=False
+        )
+    if "tx" in object_types:
+        filter_query |= Q(tx__isnull=False) & Q(tx__txid__isnull=False)
+    if "block" in object_types:
+        filter_query |= Q(block__isnull=False) & Q(block__blockheaderhash__isnull=False)
 
     # Main queryset
     objects = models.ContextRevision.objects.filter(filter_query)
-
+    # import ipdb; ipdb.set_trace()
     # Apply search query as AND
     if query:
         q_filter = (
@@ -64,40 +75,85 @@ def index(request):
 
     # Sorting (default to date for now)
     if sort == "date":
-        objects = objects.order_by("-id" if order == "desc" else "id")
+        objects = objects.order_by("-block_time" if order == "desc" else "block_time")
     else:
         # Placeholder for relevance (use date for now)
-        objects = objects.order_by("-id" if order == "desc" else "id")
+        objects = objects.order_by("-block_time" if order == "desc" else "block_time")
 
     paginator = Paginator(objects, 24)
     page = request.GET.get("page")
     page_objects = paginator.get_page(page)
 
-    for obj in page_objects:
-        if inscription := obj.inscription_set.first():
+    for ctx in page_objects:
+        if inscription := ctx.inscription_set.first():
             if inscription.filename:
                 text = None
                 src = f"/static/inscriptions/{inscription.filename}"
+                text_json = None
             else:
-                text = inscription.html
+                text = inscription.text
+                try:
+                    text_json = json.loads(text)
+                except json.JSONDecodeError:
+                    text_json = None
                 src = None
-        elif txin := obj.txin_set.first():
+            blockheight = inscription.txin.tx.block.blockheight
+            txid = inscription.txin.tx.txid
+            random = None
+        elif txin := ctx.txin_set.first():
             text = txin.scriptsig_text
             src = None
-        elif txout := obj.txout_set.first():
+            blockheight = txin.tx.block.blockheight
+            txid = txin.tx.txid
+            random = bin(int.from_bytes(os.urandom(128)))
+            text_json = None
+        elif txout := ctx.txout_set.first():
             text = txout.scriptpubkey_text
             src = None
-        elif tx := obj.tx_set.first():
+            blockheight = txout.tx.block.blockheight
+            txid = txout.tx.txid
+            random = bin(int.from_bytes(os.urandom(128)))
+            text_json = None
+        elif tx := ctx.tx_set.first():
             text = tx.txid
             src = None
-        elif block := obj.block_set.first():
+            blockheight = tx.block.blockheight
+            txid = tx.txid
+            random = None
+            text_json = None
+        elif block := ctx.block_set.first():
             text = block.blockheaderhash
+            blockheight = block.blockheight
             src = None
+            txid = None
+            random = None
+            text_json = None
         else:
             src = None
-            text = str(obj)
+            text = str(ctx)
+            blockheight = None
+            txid = None
+            random = None
+            text_json = None
+        strf_format = "%Y-%m-%d %H:%M:%S %Z"
+        block_timestamp = datetime.fromtimestamp(
+            ctx.block_time, tz=timezone.utc
+        ).strftime(strf_format)
 
-        results.append({"text": text, "url": f"/context/{obj.id}", "src": src})
+        results.append(
+            {
+                "context_revision": ctx,
+                "url": f"/context/{ctx.id}",
+                "src": src,
+                "text": text,
+                "text_json": text_json,
+                "brc_20": True if text_json else False,
+                "blockheight": blockheight,
+                "block_timestamp": block_timestamp,
+                "txid": txid,
+                "random": random,
+            }
+        )
 
     qd = request.GET.copy()
     if page_objects.has_next():
@@ -185,7 +241,7 @@ def context(request, context_id: int):
             content_size = inscription.content_size
         else:
             content_src = None
-            content_text = inscription.html
+            content_text = inscription.text
             content_size = inscription.content_size
         content_type = inscription.content_type
         block = inscription.txin.tx.block

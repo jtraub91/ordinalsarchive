@@ -10,11 +10,12 @@ document.querySelector('#darkmode_toggle').addEventListener('click', function() 
 
 document.querySelector('#order_toggle').addEventListener('click', function() {
   const isDesc = document.getElementById('order_select').value === 'desc';
-  document.getElementById('order_select').value = isDesc ? 'asc' : 'desc';
-  let toggle = document.getElementById('order_toggle');
+  const order_select = document.getElementById("order_select");
+  order_select.value = isDesc ? 'asc' : 'desc';
+  const toggle = document.getElementById('order_toggle');
   toggle.classList.toggle('fa-arrow-up');
   toggle.classList.toggle('fa-arrow-down');
-
+  htmx.trigger(order_select, 'change');
 });
 
 document.querySelector('#filters_toggle').addEventListener('click', function() {
@@ -80,101 +81,103 @@ if (filtersCloseBtn) {
 }
 
 /* Context Editor */
-const context_edit = document.getElementById('context_edit');
-const context_cancel = document.getElementById('context_cancel');
-const context_save = document.getElementById('context_save');
-
 var context_editor = document.getElementById('context_editor');
-var quill = new Quill(`#${context_editor.id}`, {
-  theme: "snow",
-  modules: {
-    toolbar: [
-      [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
-      ['bold', 'italic', 'underline', 'strike'],
-      ['blockquote', 'code-block'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1' }, { 'indent': '+1' }],
-      [{ 'script': 'super' }, { 'script': 'sub' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'font': [] }],
-      ['link', 'image', 'video']
-    ]
-  },
-  readOnly: true,
-});
+if (context_editor){
+  var quill = new Quill(`#${context_editor.id}`, {
+    theme: "snow",
+    modules: {
+      toolbar: [
+        [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['blockquote', 'code-block'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1' }, { 'indent': '+1' }],
+        [{ 'script': 'super' }, { 'script': 'sub' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'font': [] }],
+        ['link', 'image', 'video']
+      ]
+    },
+    readOnly: true,
+  });
 
-var ql_toolbar = document.querySelector('.ql-toolbar');
-ql_toolbar.classList.add('hidden');
-var ql_editor = document.querySelector('.ql-editor');
+  const context_edit = document.getElementById('context_edit');
+  const context_cancel = document.getElementById('context_cancel');
+  const context_save = document.getElementById('context_save');
 
-var context_editor_form = document.getElementById('context_editor_form');
-var context_html_input = document.getElementById('context_html_input');
-
-context_edit.addEventListener('click', function() {
-  quill.enable();
-  ql_toolbar.classList.remove('hidden');
-  context_cancel.classList.remove('hidden');
-  context_save.classList.remove('hidden');
-  context_edit.classList.add('hidden');
-  context_cancel.classList.add('flex');
-  context_save.classList.add('flex');
-  ql_editor.style.resize = "vertical";
-});
-context_cancel.addEventListener('click', function() {
-  quill.disable();
+  var ql_toolbar = document.querySelector('.ql-toolbar');
   ql_toolbar.classList.add('hidden');
-  context_cancel.classList.add('hidden');
-  context_save.classList.add('hidden');
-  context_edit.classList.remove('hidden');
-  context_cancel.classList.remove('flex');
-  context_save.classList.remove('flex');
-  ql_editor.style.resize = "none";
-  
-  let url = context_editor_form.getAttribute('hx-post');
-  
-  htmx.ajax('GET', url, "#context_editor_container");
-});
-context_save.addEventListener('click', function() {
-  quill.disable();
-  ql_toolbar.classList.add('hidden');
-  context_cancel.classList.add('hidden');
-  context_save.classList.add('hidden');
-  context_edit.classList.remove('hidden');
-  context_cancel.classList.remove('flex');
-  context_save.classList.remove('flex');
-  ql_editor.style.resize = "none";
+  var ql_editor = document.querySelector('.ql-editor');
 
-  context_html_input.value = quill.root.innerHTML;
-  htmx.trigger(context_editor_form, 'submit');
-});
+  var context_editor_form = document.getElementById('context_editor_form');
+  var context_html_input = document.getElementById('context_html_input');
 
-
-document.body.addEventListener('htmx:afterSwap', function(evt) {
-  if (evt.target.id === 'context_editor_container'){
-    context_editor = document.getElementById('context_editor');
-    quill = new Quill(`#${context_editor.id}`, {
-      theme: "snow",
-      modules: {
-        toolbar: [
-          [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
-          ['bold', 'italic', 'underline', 'strike'],
-          ['blockquote', 'code-block'],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          [{ 'indent': '-1' }, { 'indent': '+1' }],
-          [{ 'script': 'super' }, { 'script': 'sub' }],
-          [{ 'direction': 'rtl' }],
-          [{ 'font': [] }],
-          ['link', 'image', 'video']
-        ]
-      },
-      readOnly: true,
-    });
-
-    ql_toolbar = document.querySelector('.ql-toolbar');
+  context_edit.addEventListener('click', function() {
+    quill.enable();
+    ql_toolbar.classList.remove('hidden');
+    context_cancel.classList.remove('hidden');
+    context_save.classList.remove('hidden');
+    context_edit.classList.add('hidden');
+    context_cancel.classList.add('flex');
+    context_save.classList.add('flex');
+    ql_editor.style.resize = "vertical";
+  });
+  context_cancel.addEventListener('click', function() {
+    quill.disable();
     ql_toolbar.classList.add('hidden');
-    ql_editor = document.querySelector('.ql-editor');
+    context_cancel.classList.add('hidden');
+    context_save.classList.add('hidden');
+    context_edit.classList.remove('hidden');
+    context_cancel.classList.remove('flex');
+    context_save.classList.remove('flex');
+    ql_editor.style.resize = "none";
+    
+    let url = context_editor_form.getAttribute('hx-post');
+    
+    htmx.ajax('GET', url, "#context_editor_container");
+  });
+  context_save.addEventListener('click', function() {
+    quill.disable();
+    ql_toolbar.classList.add('hidden');
+    context_cancel.classList.add('hidden');
+    context_save.classList.add('hidden');
+    context_edit.classList.remove('hidden');
+    context_cancel.classList.remove('flex');
+    context_save.classList.remove('flex');
+    ql_editor.style.resize = "none";
 
-    context_editor_form = document.getElementById('context_editor_form');
-    context_html_input = document.getElementById('context_html_input');
-  }
-});
+    context_html_input.value = quill.root.innerHTML;
+    htmx.trigger(context_editor_form, 'submit');
+  });
+
+
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.target.id === 'context_editor_container'){
+      context_editor = document.getElementById('context_editor');
+      quill = new Quill(`#${context_editor.id}`, {
+        theme: "snow",
+        modules: {
+          toolbar: [
+            [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1' }, { 'indent': '+1' }],
+            [{ 'script': 'super' }, { 'script': 'sub' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'font': [] }],
+            ['link', 'image', 'video']
+          ]
+        },
+        readOnly: true,
+      });
+
+      ql_toolbar = document.querySelector('.ql-toolbar');
+      ql_toolbar.classList.add('hidden');
+      ql_editor = document.querySelector('.ql-editor');
+
+      context_editor_form = document.getElementById('context_editor_form');
+      context_html_input = document.getElementById('context_html_input');
+    }
+  });
+}

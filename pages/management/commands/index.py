@@ -103,8 +103,14 @@ class Command(BaseCommand):
                         self.stdout.write(
                             f"Parsing witness for txin {txin_n} from txn {txn_n} of block {blockheight} ..."
                         )
-                        for elem in txin_witness_stack:
-                            inscriptions = parse_inscriptions(elem)
+                        for elem_i, elem in enumerate(txin_witness_stack):
+                            try:
+                                inscriptions = parse_inscriptions(elem)
+                            except ValueError as err:
+                                self.stdout.write(
+                                    f"Error parsing inscriptions from witness stack element {elem_i} for txin {txin_n} from txn {txn_n} of block {blockheight}: {err}"
+                                )
+                                continue
                             for inscription in inscriptions:
                                 ext = guess_extension(
                                     inscription["content_type"].split(";")[0]

@@ -25,7 +25,7 @@
   </head>
   <body class="bg-[#fff3cd] dark:bg-black dark:text-white transition-colors">
     <canvas id="bg-canvas" class="hidden dark:block fixed top-0 left-0 -z-10 pointer-events-none"></canvas>
-    <form action="/" method="get" hx-get="/" hx-target="#content" hx-push-url="true" hx-trigger="change from:form">
+    <form action="/" method="get" hx-get="/" hx-target="#content" hx-push-url="true" hx-trigger="change from:form, input delay:100ms, keyup[key=='Enter']">
       <div class="flex">
         <div>
           <a href="/">
@@ -95,10 +95,6 @@
             <div class="text-xl">
               <input 
                 value="{{ request.GET.q|default_if_none:'' }}"
-                hx-get="/"
-                hx-target="#content"
-                hx-push-url="true"
-                hx-trigger="input changed, keyup[key=='Enter']"
                 name="q"
                 class="w-full p-2 border-b-2 border-black dark:border-pink-500 placeholder:text-center placeholder:text-gray-700 dark:placeholder:text-gray-300 dark:placeholder:text-center" 
                 type="text" placeholder="search the Bitcoin blockchain"/>

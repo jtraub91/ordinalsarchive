@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User  # pylint: disable=imported-auth-user
 from django.db import models
 
 
@@ -9,6 +9,9 @@ class ContextRevision(models.Model):
     )
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    content_type = models.CharField(null=True, blank=True)
+    block_time = models.IntegerField(null=True, blank=True)
 
 
 class Block(models.Model):
@@ -26,6 +29,8 @@ class Block(models.Model):
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
+            self.context_revision.content_type = "Block"
+            self.context_revision.block_time = self.time
             self.context_revision.save()
         super().save(*args, **kwargs)
 
@@ -60,6 +65,8 @@ class Tx(models.Model):
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
+            self.context_revision.content_type = "Tx"
+            self.context_revision.block_time = self.block.time
             self.context_revision.save()
         super().save(*args, **kwargs)
 
@@ -83,6 +90,8 @@ class TxIn(models.Model):
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
+            self.context_revision.content_type = "TxIn"
+            self.context_revision.block_time = self.tx.block.time
             self.context_revision.save()
         super().save(*args, **kwargs)
 
@@ -103,6 +112,8 @@ class TxOut(models.Model):
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
+            self.context_revision.content_type = "TxOut"
+            self.context_revision.block_time = self.tx.block.time
             self.context_revision.save()
         super().save(*args, **kwargs)
 
@@ -124,6 +135,8 @@ class Inscription(models.Model):
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
+            self.context_revision.content_type = "Inscription"
+            self.context_revision.block_time = self.txin.tx.block.time
             self.context_revision.save()
         super().save(*args, **kwargs)
 

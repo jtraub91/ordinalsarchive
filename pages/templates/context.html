@@ -10,7 +10,7 @@
   </div>
 
   <div class="w-full max-w-3xl px-4 mt-4">
-    <div class="max-w-[576px] max-h-[576px] min-w-[180px] min-h-[180px] m-auto border border-zinc-900 dark:border-lime-500">
+    <div class="max-w-[576px] w-fit m-auto border border-zinc-900 dark:border-lime-500">
       <!-- Content -->
       <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
         {% if content_text %}
@@ -18,7 +18,7 @@
           {{ content_text }}
         </div>
         {% elif content_src %}
-        <img src="{{ content_src }}" class="w-full h-full pointer-events-none"/>
+        <img src="{{ content_src }}"/>
         {% else %}
         No content available
         {% endif %}

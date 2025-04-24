@@ -1,28 +1,78 @@
 <div class="my-4 flex flex-col">
   <div class="flex flex-wrap gap-4 mx-auto max-w-[42rem] justify-center">
     {% for result in results %}
-    {% if forloop.last %}
-    <div hx-trigger="revealed" hx-swap="beforeend" hx-target="#content" hx-get="{{ next_page_url }}"
-      class="w-48 h-48 border-2 border-black dark:border-lime-400 bg-white dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center">
-      <a href="{{ result.url }}" class="w-full h-full text-center grow flex items-center justify-center">
-        {% if result.src %}
-        <img src="{{ result.src }}" class="w-full h-full pointer-events-none"/>
+    <div class="w-48 h-48 border-2 border-gray-700 dark:border-lime-500 bg-[#fdfdfb] dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center"
+      {% if forloop.last %}
+      hx-trigger="revealed" hx-swap="beforeend" hx-target="#content" hx-get="{{ next_page_url }}"
+      {% endif %}>
+      <a href="{{ result.url }}" class="w-full h-full overflow-hidden">
+        {% if result.context_revision.content_type == 'Inscription' %}
+          {% if result.src %}
+            <img class="object-cover object-center w-full h-full"
+              src="{{ result.src }}"/>
+          {% elif result.brc_20 %}
+            <div class="w-full h-full relative flex">
+              <div class="w-full h-full absolute flex flex-col">
+                <span>{{ result.text_json.tick }}</span>
+                <span class="text-xs">
+                  {{ result.text_json.op }} {{ result.text_json.amt }}
+                </span>
+              </div>
+              <div class="w-full h-full absolute">
+                <span class="text-xs bottom-0 right-0 absolute">
+                  BRC-20 Inscription
+                </span>
+              </div>
+              <img class="m-auto" src="/static/images/Bitcoin_old.png"/>
+            </div>
+          {% else %}
+            <div>
+              {{ result.text }}
+            </div>
+          {% endif %}
+        {% elif result.context_revision.content_type == 'Block' %}
+        <div class="w-full h-full flex relative">
+          <span class="absolute text-xs" title="{{result.block_timestamp}}">{{result.block_timestamp}}</span>
+          <span class="absolute text-xs bottom-0 right-0" title="{{ result.text }}">
+            <!-- blockheaderhash -->
+            {{result.text|slice:"-8:"}}
+          </span>
+          <div class="flex flex-col items-center justify-center w-20 h-20 m-auto p-4 line-clamp-4 text-black bg-orange-100 border-2 border-black dark:text-cyan-100 dark:bg-zinc-700 dark:border-cyan-400">
+            <div class="text-lg">Block</div>
+            <div class="text-lg">{{ result.blockheight }}</div>
+          </div>
+        </div>
+        {% elif result.context_revision.content_type == 'Tx' %}
+        <div class="w-full h-full flex relative">
+          <span class="absolute text-xs" title="{{result.block_timestamp}}">{{result.block_timestamp}}</span>
+          <span class="absolute text-xs bottom-0 right-0" title="{{ result.txid }}">{{ result.txid|slice:"-8:" }}</span>
+          <div class="flex flex-col items-center justify-center w-20 h-20 m-auto p-4 line-clamp-4 text-black bg-blue-100 border-2 border-black dark:text-pink-100 dark:bg-zinc-700 dark:border-pink-400">
+            <div class="text-lg">Tx</div>
+          </div>
+        </div>
+        {% elif result.context_revision.content_type == 'TxIn' or result.context_revision.content_type == 'TxOut' %}
+        <div class="flex justify-center items-center w-full h-full relative">
+          <div class="w-full h-full absolute blur-[0.125rem] opacity-70 ">
+            <div class="w-full h-full text-xs overflow-hidden wrap-anywhere">{{ result.random }}</div>
+          </div>
+          <div class="w-full h-full absolute z-10">
+            <span class="text-xs bottom-0 right-0 absolute">
+              {% if result.context_revision.content_type == 'TxIn' %}
+              Coinbase ScriptSig
+              {% elif result.context_revision.content_type == 'TxOut' %}
+              OP_RETURN
+              {% endif %}
+            </span>
+          </div>
+          <span class="flex items-center justify-center w-full h-full font-bold text-center wrap-anywhere whitespace-normal p-4 my-auto text-black text-sm dark:text-white overflow-hidden">
+            {{ result.text }}
+          </span>
+        </div>
         {% else %}
-        <span class="m-auto p-4 line-clamp-4 text-black dark:text-white">{{ result.text }}</span>
+        <span class="m-auto p-4 line-clamp-4 text-black dark:text-white">?</span>
         {% endif %}
       </a>
     </div>
-    {% else %}
-    <div class="w-48 h-48 border-2 border-gray-700 dark:border-lime-500 bg-[#fdfdfb] dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center">
-      <a href="{{ result.url }}" class="w-full h-full text-center grow flex items-center justify-center">
-        {% if result.src %}
-        <img src="{{ result.src }}" class="w-full h-full pointer-events-none"/>
-        {% else %}
-        <span class="m-auto p-4 line-clamp-4 text-black dark:text-white">{{ result.text }}</span>
-        {% endif %}
-      </a>
-    </div>
-    {% endif %}
     {% endfor %}
   </div>
 </div>
