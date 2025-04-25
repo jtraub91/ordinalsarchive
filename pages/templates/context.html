@@ -2,15 +2,34 @@
 
 {% block content %}
 <div class="flex flex-col w-full items-center justify-center min-w-xs">
-  <div class="w-full max-w-3xl mt-4 px-4">
-    <h2 class="text-3xl font-anaheim">Content</h2>
-    <p>Type: {{ object_type }}</p>
-    <p>Content Type: {{ content_type }}</p>
-    <p>Size: {{ content_size }}</p>
+  <div class="w-full max-w-[576px] mt-4 flex flex-row justify-between">
+    <h2 class="text-3xl font-anaheim">
+    {% if object_type|lower == "block" %}
+      <span>Block {{ blockheight }}</span>
+    {% elif object_type|lower == "tx" %}
+      <div class="flex flex-col items-start">
+        <span>Tx {{ tx_n }}</span>
+        <span class="text-lg">of block {{ blockheight }}</span>
+      </div>
+    {% elif object_type|lower == "txin" %}
+      <div class="flex flex-col items-start">
+        <span>Coinbase ScriptSig</span>
+        <span class="text-lg">of block {{ blockheight }}</span>
+      </div>
+    {% elif object_type|lower == "txout" %}
+      <div class="flex flex-col items-start">
+        <span>OP_RETURN</span>
+        <span class="text-lg">in Tx {{ tx_n }} (output {{ txout_n }}) of block {{ blockheight }}</span>
+      </div>
+    {% elif object_type|lower == "inscription" %}
+      <span>Inscription</span>
+    {% endif %}
+    </h2>
+    <i id="tip_lightning_btn" class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-200" title="Tip this content"></i>
   </div>
 
-  <div class="w-full max-w-3xl px-4 mt-4">
-    <div class="max-w-[576px] w-fit m-auto border border-zinc-900 dark:border-lime-500">
+  <div class="w-full max-w-[576px]  mt-4">
+    <div class="w-fit m-auto border border-zinc-900 dark:border-lime-500">
       <!-- Content -->
       <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
         {% if content_text %}
@@ -26,32 +45,28 @@
     </div>
   </div>
 
-  <div class="w-full max-w-3xl px-4 mt-4">
-    <div class="flex justify-between">
+  <div class="w-full max-w-[576px]  mt-4">
+    <div class="flex justify-between max-w-[576px] m-auto">
       <h3 class="text-3xl font-anaheim">Context</h3>
       <div class="flex gap-2">
-        <button class="flex cursor-pointer" id="context_edit">
-          <span class="my-auto">Edit</span>
+        <button class="flex cursor-pointer text-2xl" id="context_edit">
           <i class="fa-solid fa-pen-to-square my-auto"></i>
         </button>
-        <button class="cursor-pointer hidden" id="context_save">
-          <span class="my-auto">Save</span>
-          <i class="fa-solid fa-bolt my-auto"></i>
+        <button class="cursor-pointer hidden text-2xl" id="context_save">
+          <i class="fa-solid fa-download my-auto"></i>
         </button>
-        <button class="cursor-pointer hidden" id="context_cancel">
-          <span class="my-auto">Cancel</span>
+        <button class="cursor-pointer hidden text-2xl" id="context_cancel">
           <i class="fa-solid fa-rotate-left my-auto"></i>
         </button>
       </div>
     </div>
-    
     {% include "components/context_editor.html" %}
   </div>
   
 
-  <div class="w-full max-w-3xl px-4 mt-4">
+  <div class="w-full max-w-[576px]  mt-4">
     <h3 class="text-3xl font-anaheim">Details</h3>
-    <div class="w-full max-w-3xl px-4 mt-4">
+    <div class="w-full max-w-[576px] px-4 mt-4">
       <ul class="list-disc">
         <li>
           Found in
@@ -60,6 +75,26 @@
         </li>
       </ul>
     </div>
+  </div>
+</div>
+
+<!-- Lightning Tip Modal -->
+<div id="tip_lightning_modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 hidden" role="dialog" aria-modal="true">
+  <div class="bg-[#fff3cd] dark:bg-zinc-900 text-black dark:text-white shadow-lg p-6 max-w-sm w-full border border-zinc-900 dark:border-lime-500" style="border-radius:0;">
+    <button class="absolute top-2 right-2 text-2xl text-zinc-400 hover:text-black dark:hover:text-white" id="tip_lightning_close" aria-label="Close" style="border-radius:0;">&times;</button>
+    <div class="flex items-center mb-2">
+      <i class="fa-solid fa-bolt text-yellow-400 text-2xl mr-2"></i>
+      <h2 class="text-xl font-bold">Tip</h2>
+    </div>
+    <div class="flex flex-col items-center mb-2">
+      <div id="lightning_qr" class="w-36 h-36 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-900 dark:border-lime-500 mb-2" style="border-radius:0;">
+        <span class="text-zinc-400 dark:text-gray-500">[QR CODE]</span>
+      </div>
+      <div class="w-full">
+        <code id="lightning_invoice" class="bg-white dark:bg-zinc-800 border border-zinc-900 dark:border-lime-500 p-2 text-xs select-all block cursor-pointer whitespace-pre-line break-words w-full text-black dark:text-white" style="border-radius:0;">lnbc1dummybolt11invoiceexamplethatcanbeverylongandmayrequirehorizontalorscroll...</code>
+      </div>
+    </div>
+    <div id="tip_feedback" class="text-xs text-zinc-600 dark:text-lime-400 mt-2"></div>
   </div>
 </div>
 {% endblock %}

@@ -297,6 +297,7 @@ def context(request, context_id: int):
             "context_id": context_row.id,
             "blockheight": block.blockheight,
             "blockheaderhash": block.blockheaderhash,
+            "tx_n": tx.n if tx else None,
             "txid": tx.txid if tx else None,
             "txout_n": txout.n if txout else None,
             "txin_n": txin.n if txin else None,

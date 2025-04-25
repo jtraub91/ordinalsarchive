@@ -87,15 +87,11 @@ if (context_editor){
     theme: "snow",
     modules: {
       toolbar: [
-        [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
-        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'header': 1 }, { 'header': 2 }],
+        ['bold', 'italic', 'underline'],
         ['blockquote', 'code-block'],
         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1' }, { 'indent': '+1' }],
-        [{ 'script': 'super' }, { 'script': 'sub' }],
-        [{ 'direction': 'rtl' }],
-        [{ 'font': [] }],
-        ['link', 'image', 'video']
+        ['link', 'image']
       ]
     },
     readOnly: true,
@@ -181,3 +177,43 @@ if (context_editor){
     }
   });
 }
+
+// Lightning Tip Modal logic
+(function() {
+  const tipBtn = document.getElementById('tip_lightning_btn');
+  const tipModal = document.getElementById('tip_lightning_modal');
+  const tipClose = document.getElementById('tip_lightning_close');
+  const invoiceEl = document.getElementById('lightning_invoice');
+  const feedbackEl = document.getElementById('tip_feedback');
+
+  if (tipBtn && tipModal && tipClose) {
+    tipBtn.addEventListener('click', () => {
+      tipModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+    tipClose.addEventListener('click', () => {
+      tipModal.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+    tipModal.addEventListener('click', (e) => {
+      if (e.target === tipModal) {
+        tipModal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        tipModal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+  if (invoiceEl && feedbackEl) {
+    invoiceEl.addEventListener('click', () => {
+      navigator.clipboard.writeText(invoiceEl.textContent).then(() => {
+        feedbackEl.textContent = 'Invoice copied!';
+        setTimeout(() => { feedbackEl.textContent = ''; }, 1200);
+      });
+    });
+  }
+})();

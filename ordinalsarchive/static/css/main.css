@@ -31,3 +31,8 @@ body {
 .ql-toolbar {
   background-color: #18181b;
 }
+
+/* Hide Quill snow theme border in context editor */
+#context_editor_container .ql-container.ql-snow {
+  border: none !important;
+}
