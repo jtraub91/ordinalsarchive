@@ -111,6 +111,7 @@
                     <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>relevance</option>
                   </select>
                 </div>
+                <!-- <img class="cursor-pointer transform mt-0.5 rotate-180" src="/static/images/triangle.png" title="sort" id="order_toggle"/> -->
                 <i class="fa-solid text-2xl fa-arrow-up cursor-pointer" id="order_toggle"></i>
                 <div class="hidden">
                   <label for="order_select">
@@ -141,7 +142,7 @@
         </div>
       </div>
     </form>
-    <div class="p-4 m-4" id="content">
+    <div class="py-4 my-4 px-1 mx-1" id="content">
       {% block content %}
       {% include "components/results.html" with results=results%}
       {% endblock %}

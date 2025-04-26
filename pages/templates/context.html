@@ -25,7 +25,7 @@
       <span>Inscription</span>
     {% endif %}
     </h2>
-    <i id="tip_lightning_btn" class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-200" title="Tip this content"></i>
+    <i hx-get="/lightning-tip/{{ object_type }}/{{ object_hash }}" id="tip_lightning_btn" class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-200" title="Tip this content"></i>
   </div>
 
   <div class="w-full max-w-[576px]  mt-4">

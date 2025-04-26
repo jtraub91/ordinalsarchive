@@ -1,11 +1,11 @@
 import json
 import os
 from datetime import datetime, timezone
+from typing import Optional
 
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
-from typing import Optional
 
 from . import models
 
@@ -206,7 +206,19 @@ def block(request, blockheaderhash: Optional[str] = None):
         context={
             "blockheight": block.blockheight if block else None,
             "blockheaderhash": block.blockheaderhash,
-            "blockjson": json.dumps(block.dict(), indent=2),
+            "blockjson": json.dumps(
+                {
+                    "blockheight": block.blockheight,
+                    "blockheaderhash": block.blockheaderhash,
+                    "version": block.version,
+                    "prev_blockheaderhash": block.prev_blockheaderhash,
+                    "merkle_root": block.merkle_root,
+                    "time": block.time,
+                    "bits": block.bits,
+                    "nonce": block.nonce,
+                },
+                indent=2,
+            ),
         },
     )
 

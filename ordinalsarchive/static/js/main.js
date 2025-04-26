@@ -90,7 +90,6 @@ if (context_editor){
         [{ 'header': 1 }, { 'header': 2 }],
         ['bold', 'italic', 'underline'],
         ['blockquote', 'code-block'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
         ['link', 'image']
       ]
     },
@@ -154,15 +153,10 @@ if (context_editor){
         theme: "snow",
         modules: {
           toolbar: [
-            [{ 'header': 1 }, { 'header': 2 }, { 'header': 3 }],
-            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'header': 1 }, { 'header': 2 }],
+            ['bold', 'italic', 'underline'],
             ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1' }, { 'indent': '+1' }],
-            [{ 'script': 'super' }, { 'script': 'sub' }],
-            [{ 'direction': 'rtl' }],
-            [{ 'font': [] }],
-            ['link', 'image', 'video']
+            ['link', 'image']
           ]
         },
         readOnly: true,

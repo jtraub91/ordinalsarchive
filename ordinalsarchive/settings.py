@@ -157,6 +157,18 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "WARNING",
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
     },
 }
+
+
+S3_ACCESS_KEY = os.environ.get("DJANGO_S3_ACCESS_KEY")
+S3_SECRET_KEY = os.environ.get("DJANGO_S3_SECRET_KEY")
+S3_BUCKET_NAME = os.environ.get("DJANGO_S3_BUCKET_NAME")

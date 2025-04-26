@@ -1,17 +1,6 @@
 from django.contrib.auth.models import User  # pylint: disable=imported-auth-user
+from django.contrib.postgres.fields import JSONField
 from django.db import models
-
-
-class ContextRevision(models.Model):
-    html = models.TextField()
-    prev_revision = models.ForeignKey(
-        "self", on_delete=models.SET_NULL, null=True, blank=True
-    )
-    updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-
-    content_type = models.CharField(null=True, blank=True)
-    block_time = models.IntegerField(null=True, blank=True)
 
 
 class Block(models.Model):
@@ -24,30 +13,8 @@ class Block(models.Model):
     bits = models.CharField()
     nonce = models.BigIntegerField()
 
-    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
-
-    def save(self, *args, **kwargs):
-        if self.context_revision_id is None:
-            self.context_revision = ContextRevision()
-            self.context_revision.content_type = "Block"
-            self.context_revision.block_time = self.time
-            self.context_revision.save()
-        super().save(*args, **kwargs)
-
-    def dict(self):
-        return {
-            "blockheight": self.blockheight,
-            "blockheaderhash": self.blockheaderhash,
-            "version": self.version,
-            "prev_blockheaderhash": self.prev_blockheaderhash,
-            "merkle_root": self.merkle_root,
-            "time": self.time,
-            "bits": self.bits,
-            "nonce": self.nonce,
-        }
-
     def __str__(self):
-        return f"<Block height={self.blockheight}, hash={self.blockheaderhash}>"
+        return f"<Block height={self.blockheight}>"
 
 
 class Tx(models.Model):
@@ -60,18 +27,45 @@ class Tx(models.Model):
     version = models.IntegerField()
     locktime = models.IntegerField()
 
-    context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
+    def __str__(self):
+        return f"<Tx n={self.n} block={self.block}>"
 
-    def save(self, *args, **kwargs):
-        if self.context_revision_id is None:
-            self.context_revision = ContextRevision()
-            self.context_revision.content_type = "Tx"
-            self.context_revision.block_time = self.block.time
-            self.context_revision.save()
-        super().save(*args, **kwargs)
+
+class ContextRevision(models.Model):
+    html = models.TextField(max_length=1000000)
+    prev_revision = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return f"<Tx txid={self.txid}>"
+        return f"<ContextRevision id={self.id}>"
+
+
+class Content(models.Model):
+    hash = models.BinaryField(unique=True)
+    mime_type = models.CharField()
+    size = models.IntegerField()
+
+    params = JSONField()
+
+    coinbase_scriptsig = models.ForeignKey(
+        "CoinbaseScriptsig", on_delete=models.CASCADE, null=True
+    )
+    op_return = models.ForeignKey("OpReturn", on_delete=models.CASCADE, null=True)
+    inscription = models.ForeignKey("Inscription", on_delete=models.CASCADE, null=True)
+
+    block = models.ForeignKey(Block, on_delete=models.CASCADE)
+
+    context_revision = models.ForeignKey(
+        ContextRevision, on_delete=models.CASCADE, null=True
+    )
+
+    def __str__(self):
+        return f"<Content hash={self.hash} mime_type={self.mime_type} size={self.size}>"
 
 
 class TxIn(models.Model):
@@ -82,51 +76,65 @@ class TxIn(models.Model):
     txid = models.CharField()
     vout = models.BigIntegerField()
 
-    scriptsig_text = models.CharField(null=True)
     sequence = models.BigIntegerField()
+
+    def __str__(self):
+        return f"<TxIn n={self.n} tx={self.tx}>"
+
+
+class CoinbaseScriptsig(models.Model):
+    txin = models.ForeignKey(TxIn, on_delete=models.CASCADE)
+    scriptsig = models.BinaryField()
+    scriptsig_text = models.CharField(null=True)
 
     context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
-            self.context_revision.content_type = "TxIn"
-            self.context_revision.block_time = self.tx.block.time
+            self.context_revision.content_type = "CoinbaseScriptsig"
+            self.context_revision.block_time = self.txin.tx.block.time
             self.context_revision.save()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"<TxIn n={self.n} txid={self.tx.txid}>"
 
 
 class TxOut(models.Model):
     tx = models.ForeignKey(Tx, on_delete=models.CASCADE)
     n = models.IntegerField()
 
-    scriptpubkey = models.BinaryField(null=True)
-    scriptpubkey_text = models.CharField(null=True)
     value = models.BigIntegerField()
+
+    def __str__(self):
+        return f"<TxOut n={self.n} txid={self.tx.txid}>"
+
+
+class OpReturn(models.Model):
+    txout = models.ForeignKey(TxOut, on_delete=models.CASCADE)
+    scriptpubkey = models.BinaryField()
+    scriptpubkey_text = models.CharField()
 
     context_revision = models.ForeignKey(ContextRevision, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
-            self.context_revision.content_type = "TxOut"
-            self.context_revision.block_time = self.tx.block.time
+            self.context_revision.content_type = "OpReturn"
+            self.context_revision.block_time = self.txout.tx.block.time
             self.context_revision.save()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"<TxOut n={self.n} txid={self.tx.txid}>"
+        return f"<OpReturn txout={self.txout}>"
 
 
 class Inscription(models.Model):
     number = models.IntegerField(null=True)
+    hash = models.BinaryField(unique=True)
     content_type = models.CharField()
     content_size = models.IntegerField()
-    filename = models.CharField(null=True)
-    text = models.TextField(null=True)
+    filename = models.CharField(null=True, unique=True)
+    text = models.TextField(default="")
+    json = JSONField(default={})
 
     txin = models.ForeignKey(TxIn, on_delete=models.CASCADE)
 
@@ -141,4 +149,6 @@ class Inscription(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"<Inscription id={self.id} number={self.number}>"
+        if self.number is not None:
+            return f"<Inscription number={self.number} txin={self.txin}>"
+        return f"<Inscription id={self.id} txin={self.txin}>"
