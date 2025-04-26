@@ -1,5 +1,4 @@
 from django.contrib.auth.models import User  # pylint: disable=imported-auth-user
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 
@@ -50,7 +49,7 @@ class Content(models.Model):
     mime_type = models.CharField()
     size = models.IntegerField()
 
-    params = JSONField()
+    params = models.JSONField()
 
     coinbase_scriptsig = models.ForeignKey(
         "CoinbaseScriptsig", on_delete=models.CASCADE, null=True
@@ -134,7 +133,7 @@ class Inscription(models.Model):
     content_size = models.IntegerField()
     filename = models.CharField(null=True, unique=True)
     text = models.TextField(default="")
-    json = JSONField(default={})
+    json = models.JSONField(default=dict)
 
     txin = models.ForeignKey(TxIn, on_delete=models.CASCADE)
 
