@@ -147,22 +147,39 @@ if not INSCRIPTIONS_DIR.exists():
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LOG_FILE = os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "logs" / "django.log")
+Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+        }
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.environ.get(
+                "DJANGO_LOG_FILE", BASE_DIR / "logs" / "django.log"
+            ),
+            "formatter": "default",
+            "maxBytes": 1024 * 1024 * 5,
+            "backupCount": 5,
         },
     },
     "root": {
-        "handlers": ["console"],
+        "handlers": ["console", "file"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console"],
-            "level": "INFO",
+            "handlers": ["console", "file"],
+            "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": True,
         },
     },
@@ -172,3 +189,4 @@ LOGGING = {
 S3_ACCESS_KEY = os.environ.get("DJANGO_S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("DJANGO_S3_SECRET_KEY")
 S3_BUCKET_NAME = os.environ.get("DJANGO_S3_BUCKET_NAME")
+S3_ENDPOINT_URL = os.environ.get("DJANGO_S3_ENDPOINT_URL")

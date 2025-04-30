@@ -1,16 +1,15 @@
 <div class="my-4 flex flex-col">
-  <div class="flex flex-wrap gap-4 mx-auto max-w-[42rem] justify-center">
+  <div class="flex flex-wrap gap-4 mx-auto max-w-3xl justify-center">
     {% for result in results %}
-    <div class="w-48 h-48 border-2 border-gray-700 dark:border-lime-500 bg-[#fdfdfb] dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center"
+    <div class="w-60 h-60 border-2 border-gray-700 dark:border-lime-500 bg-[#fdfdfb] dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center"
       {% if forloop.last %}
       hx-trigger="revealed" hx-swap="beforeend" hx-target="#content" hx-get="{{ next_page_url }}"
       {% endif %}>
       <a href="{{ result.url }}" class="w-full h-full overflow-hidden">
-        {% if result.context_revision.content_type == 'Inscription' %}
-          {% if result.src %}
-            <img class="object-cover object-center w-full h-full"
-              src="{{ result.src }}"/>
-          {% elif result.brc_20 %}
+        
+        {% if result.object_type == 'Inscription' %}
+          {% if result.text_json.p == "brc-20" %}
+            {# BRC-20 Inscription #}
             <div class="w-full h-full relative flex">
               <div class="w-full h-full absolute flex flex-col">
                 <span>{{ result.text_json.tick }}</span>
@@ -25,12 +24,27 @@
               </div>
               <img class="m-auto" src="/static/images/Bitcoin_old.png"/>
             </div>
-          {% else %}
+          {% elif result.mime_type == "image" %}
+            <img class="object-cover object-center w-full h-full"
+              src="{{ result.src }}"/>
+          {% elif result.mime_type == "text" %}
+            {% if result.mime_subtype == "html" %}
+            <div class="w-full h-full relative flex">
+              <iframe class="w-full h-full pointer-events-none" src="{{ result.src }}"></iframe>
+              <!-- <div class="w-full h-full absolute">
+                <span class="text-xs bottom-0 right-0 absolute">
+                  {{ result.content.mime_type }}
+                </span>
+              </div>
+              <img class="m-auto w-16" src="/static/images/html.svg"/> -->
+            </div>
+            {% else %}
             <div>
               {{ result.text }}
             </div>
+            {% endif %}
           {% endif %}
-        {% elif result.context_revision.content_type == 'Block' %}
+        {% elif result.object_type == 'Block' %}
         <div class="w-full h-full flex relative">
           <span class="absolute text-xs" title="{{result.block_timestamp}}">{{result.block_timestamp}}</span>
           <span class="absolute text-xs bottom-0 right-0" title="{{ result.text }}">
@@ -42,7 +56,7 @@
             <div class="text-lg">{{ result.blockheight }}</div>
           </div>
         </div>
-        {% elif result.context_revision.content_type == 'Tx' %}
+        {% elif result.object_type == 'Tx' %}
         <div class="w-full h-full flex relative">
           <span class="absolute text-xs" title="{{result.block_timestamp}}">{{result.block_timestamp}}</span>
           <span class="absolute text-xs bottom-0 right-0" title="{{ result.txid }}">{{ result.txid|slice:"-8:" }}</span>
@@ -50,21 +64,32 @@
             <div class="text-lg">Tx</div>
           </div>
         </div>
-        {% elif result.context_revision.content_type == 'TxIn' or result.context_revision.content_type == 'TxOut' %}
+        {% elif result.object_type == 'CoinbaseScriptsig' %}
         <div class="flex justify-center items-center w-full h-full relative">
+          <span class="w-full h-full absolute text-xs" title="{{result.block_timestamp}}">{{result.block_timestamp}}</span>
           <div class="w-full h-full absolute blur-[0.125rem] opacity-70 ">
-            <div class="w-full h-full text-xs overflow-hidden wrap-anywhere">{{ result.random }}</div>
+            <div class="w-full h-full text-xs p-0.5 m-auto text-center overflow-hidden wrap-anywhere">{{ result.block_binary }}</div>
           </div>
           <div class="w-full h-full absolute z-10">
             <span class="text-xs bottom-0 right-0 absolute">
-              {% if result.context_revision.content_type == 'TxIn' %}
-              Coinbase ScriptSig
-              {% elif result.context_revision.content_type == 'TxOut' %}
-              OP_RETURN
-              {% endif %}
+              Coinbase
             </span>
           </div>
-          <span class="flex items-center justify-center w-full h-full font-bold text-center wrap-anywhere whitespace-normal p-4 my-auto text-black text-sm dark:text-white overflow-hidden">
+          <span class="flex items-center justify-center w-full h-full font-bold text-center p-0.5 wrap-anywhere whitespace-normal m-2 text-black text-lg dark:text-white overflow-hidden">
+            {{ result.text }}
+          </span>
+        </div>
+        {% elif result.object_type == 'OpReturn' %}
+        <div class="w-full h-full relative flex">
+          <div class="absolute flex flex-col px-0.5 triangle-svg-filter">
+            <img src="/static/images/envelope.svg" class="w-6 h-6"/>
+          </div>
+          <div class="w-full h-full absolute">
+            <span class="text-xs bottom-0 right-0 absolute p-0.5">
+              OP_RETURN
+            </span>
+          </div>
+          <span class="flex items-center justify-center w-full h-full font-bold text-center p-0.5 wrap-anywhere whitespace-normal m-2 text-black text-lg dark:text-white overflow-hidden">
             {{ result.text }}
           </span>
         </div>

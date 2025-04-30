@@ -15,17 +15,106 @@
   </div> -->
 
   <div class="w-full max-w-3xl px-2 relative my-4">
-    <div class="absolute right-2 top-2 z-10">
+    <!-- <div class="absolute right-2 top-2 z-10">
       <button class="text-green-400 hover:text-green-300"
               onclick="navigator.clipboard.writeText(document.getElementById('json-content').innerText)">
+        <i class="fa-solid fa-copy"></i>
       </button>
-    </div>
-    <div class="border border-gray-300 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 text-black dark:text-green-400">
-      <div class="overflow-auto">
-        <pre id="json-content" 
-          class="m-4 font-mono text-sm whitespace-pre">{{ blockjson|safe }}</pre>
+    </div> -->
+    <form hx-get="{{ request.path }}" hx-push-url="true" hx-trigger="click" class="hidden">
+      <div class="flex flex-row">
+        <label for="raw_json">raw</label>
+        <input class="opacity-0 w-0 h-0"
+          type="checkbox" name="raw_json" id="raw_json" checked/>
+        <label for="raw_json">json</label>
       </div>
+    </form>
+    
+    <div class="border border-gray-300 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 text-black dark:text-green-400">
+      <pre id="block_content" class="m-2 font-mono text-sm break-all whitespace-pre-wrap max-w-full">{{ blockhex }}</pre><div class="loading"></div>
+      <span id="block_trail"></span>
     </div>
   </div>
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+  {{ block.super }}
+  <style>
+    .loading {
+      font-size: 1rem;
+    }
+    .loading:after {
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: bottom;
+      -webkit-animation: ellipsis steps(4,end) 900ms infinite;      
+      animation: ellipsis steps(4,end) 900ms infinite;
+      content: "\2026"; /* ascii code for the ellipsis character */
+      width: 0px;
+    }
+
+    @keyframes ellipsis {
+      to {
+        width: 1rem;    
+      }
+    }
+
+    @-webkit-keyframes ellipsis {
+      to {
+        width: 1rem;    
+      }
+    }
+  </style>
+  <script>
+
+    const block_trail = document.getElementById('block_trail');
+    const block_content = document.getElementById('block_content');
+
+    const blockheaderhash = window.location.pathname.split('/').pop();
+    console.log(blockheaderhash)
+
+    let request_is_active = false;
+
+    function isInViewport(element) {
+      const bounding = element.getBoundingClientRect();
+      return (
+        bounding.top >= 0 &&
+        bounding.left >= 0 &&
+        bounding.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+        bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+      );
+    }
+
+    function requestBlockHex() {
+      if (request_is_active) {
+        return;
+      }
+      request_is_active = true;
+      fetch(`/block/${blockheaderhash}?offset=${block_content.innerText.length}`, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+        },
+      })
+        .then(response => response.json())
+        .then(data => {
+          block_content.innerText += data.blockhex;
+          request_is_active = false;
+        })
+        .catch(error => {
+          console.error('Error fetching block hex:', error);
+          request_is_active = false;
+        });
+    }
+
+    window.addEventListener('scroll', function() {
+        if (isInViewport(block_trail)) {
+          requestBlockHex();
+        }
+    });
+
+  </script>
 {% endblock %}

@@ -1,0 +1,18 @@
+<div>
+  <h3 class="font-semibold">Mime Type</h3>
+  <ul>
+    {% for mime_type in mime_types %}
+    <li>
+      <input
+        {% if mime_type in query_content_types %}checked{% endif %}
+        type="checkbox"
+        name="mime_type"
+        value="{{ mime_type }}" 
+        id="mime_type_{{ mime_type }}">
+      <label for="mime_type_{{ mime_type }}">
+        {{ mime_type }}
+      </label>
+    </li>
+    {% endfor %}
+  </ul>
+</div>

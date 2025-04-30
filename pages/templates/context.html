@@ -1,80 +1,152 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex flex-col w-full items-center justify-center min-w-xs">
-  <div class="w-full max-w-[576px] mt-4 flex flex-row justify-between">
-    <h2 class="text-3xl font-anaheim">
-    {% if object_type|lower == "block" %}
-      <span>Block {{ blockheight }}</span>
-    {% elif object_type|lower == "tx" %}
-      <div class="flex flex-col items-start">
-        <span>Tx {{ tx_n }}</span>
-        <span class="text-lg">of block {{ blockheight }}</span>
+<div class="w-full mt-4">
+  <div class="m-auto border border-zinc-900 dark:border-lime-500">
+    <!-- Content -->
+    <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
+      {% if object_type|lower == "coinbasescriptsig" %}
+      <div class="p-4">
+        {{ content.coinbase_scriptsig.scriptsig_text }}
       </div>
-    {% elif object_type|lower == "txin" %}
-      <div class="flex flex-col items-start">
-        <span>Coinbase ScriptSig</span>
-        <span class="text-lg">of block {{ blockheight }}</span>
+      {% elif object_type|lower == "opreturn" %}
+      <div class="p-4">
+        {{ content.op_return.scriptpubkey_text }}
       </div>
-    {% elif object_type|lower == "txout" %}
-      <div class="flex flex-col items-start">
-        <span>OP_RETURN</span>
-        <span class="text-lg">in Tx {{ tx_n }} (output {{ txout_n }}) of block {{ blockheight }}</span>
+      {% elif object_type|lower == "inscription" %}
+      {% if mime_type == "image" %}
+      <a href="/static/inscriptions/{{ content.inscription.filename }}" target="_blank">
+        <img class="w-full h-full" src="/static/inscriptions/{{ content.inscription.filename }}"/>
+      </a>
+      {% elif mime_type == "audio" %}
+      <audio src="/static/inscriptions/{{ content.inscription.filename }}" controls></audio>
+      {% elif mime_type == "video" %}
+      <video src="/static/inscriptions/{{ content.inscription.filename }}" controls></video>
+      {% elif mime_type == "text" %}
+      {% if content.mime_type == "text/html" %}
+      <div class="w-full">
+        <iframe sandbox="allow-scripts" src="/static/inscriptions/{{ content.inscription.filename }}"></iframe>
       </div>
-    {% elif object_type|lower == "inscription" %}
-      <span>Inscription</span>
-    {% endif %}
-    </h2>
-    <i hx-get="/lightning-tip/{{ object_type }}/{{ object_hash }}" id="tip_lightning_btn" class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-200" title="Tip this content"></i>
-  </div>
-
-  <div class="w-full max-w-[576px]  mt-4">
-    <div class="w-fit m-auto border border-zinc-900 dark:border-lime-500">
-      <!-- Content -->
-      <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
-        {% if content_text %}
-        <div class="p-4">
-          {{ content_text }}
+      {% else %}
+      <div class="overflow-x-auto p-4 w-full mx-auto">
+        <pre id="json-content" 
+          class="m-2 font-mono text-sm whitespace-pre">{{ content.inscription.text }}</pre>
+      </div>
+      {% endif %}
+      {% elif mime_type == "application" %}
+        <div class="overflow-x-auto w-full mx-auto">
+          <pre id="json-content" 
+            class="m-2 font-mono text-sm whitespace-pre">{{ content.inscription.text }}</pre>
         </div>
-        {% elif content_src %}
-        <img src="{{ content_src }}"/>
-        {% else %}
-        No content available
-        {% endif %}
-      </div>
+      {% else %}
+        Unrecognized mime type: {{ mime_type }}
+      {% endif %}
+      {% endif %}
     </div>
   </div>
+</div>
 
-  <div class="w-full max-w-[576px]  mt-4">
-    <div class="flex justify-between max-w-[576px] m-auto">
+<div class="flex flex-col w-full min-w-xs ">
+  <div class="w-full mt-4 flex flex-row justify-between">
+    {% if object_type|lower == "coinbasescriptsig" %}
+    <div class="flex flex-col items-start">
+      <span class="text-3xl font-anaheim">Coinbase</span>
+      <span class="text-lg">of block {{ content.block.blockheight }}</span>
+    </div>
+    {% elif object_type|lower == "opreturn" %}
+    <div class="flex flex-col items-start">
+      <span class="text-3xl font-anaheim">OP_RETURN</span>
+      <span class="text-lg">in Tx {{ content.op_return.txout.tx.n }} (output {{ content.op_return.txout.n }}) of block {{ content.block.blockheight }}</span>
+    </div> 
+    {% elif object_type|lower == "inscription" %}
+    <div class="flex flex-col items-start">
+      <div>
+        <span class="text-3xl font-anaheim">Inscription</span>
+        <span>#{{ content.inscription.id }}</span>
+      </div>
+    </div>
+    {% endif %}
+    <i hx-get="/lightning-tip/{{ object_type }}/{{ object_hash }}" id="tip_lightning_btn"
+      class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-200" title="Tip this content"></i>
+  </div>
+  <div class="flex flex-row">
+    <img id="metadata_toggle" src="/static/images/triangle.svg" 
+      class="w-4 h-4 transform cursor-pointer triangle-svg-filter"/>
+    <div class="my-auto px-2 text-sm">
+      Show Metadata
+    </div>
+  </div>
+  <div id="metadata"
+    class="text-xs w-full p-0.5 tracking-tighter border border-zinc-900 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 flex flex-col hidden">
+    <span>Block.timestamp: {{ block_timestamp }}</span>
+    <span>Content Hash: {{ content.inscription.content_hash.hex }}</span>
+    <span>Content type: {{ content_type }}</span>
+    <span>Content Size: {{ content.size }}</span>
+    {% for key, value in content_metadata.items %}
+      <span>metadata.{{ key }}: {{ value }}</span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="w-full mt-4">
+  <div class="flex justify-between m-auto">
+    <div class="flex">
       <h3 class="text-3xl font-anaheim">Context</h3>
-      <div class="flex gap-2">
-        <button class="flex cursor-pointer text-2xl" id="context_edit">
-          <i class="fa-solid fa-pen-to-square my-auto"></i>
-        </button>
-        <button class="cursor-pointer hidden text-2xl" id="context_save">
-          <i class="fa-solid fa-download my-auto"></i>
-        </button>
-        <button class="cursor-pointer hidden text-2xl" id="context_cancel">
-          <i class="fa-solid fa-rotate-left my-auto"></i>
-        </button>
-      </div>
+      <span class="text-xs mx-2 mt-auto mb-1">rev {{ context_revision_hash|slice:"-8:" }}</span>
     </div>
-    {% include "components/context_editor.html" %}
+    <div class="flex gap-2">
+      <button class="flex cursor-pointer text-2xl" id="context_edit">
+        <i class="fa-solid fa-pen-to-square my-auto"></i>
+      </button>
+      <button class="cursor-pointer hidden text-2xl" id="context_save">
+        <i class="fa-solid fa-download my-auto"></i>
+      </button>
+      <button class="cursor-pointer hidden text-2xl" id="context_cancel">
+        <i class="fa-solid fa-rotate-left my-auto"></i>
+      </button>
+    </div>
   </div>
-  
+  {% include "components/context_editor.html" %}
+</div>
 
-  <div class="w-full max-w-[576px]  mt-4">
-    <h3 class="text-3xl font-anaheim">Details</h3>
-    <div class="w-full max-w-[576px] px-4 mt-4">
-      <ul class="list-disc">
-        <li>
-          Found in
-          <a class="text-blue-600 hover:text-blue-800" 
-            href="/block/{{ blockheaderhash }}">Block {{ blockheight }}</a>
-        </li>
-      </ul>
-    </div>
+<!-- Details -->
+<div class="w-full mt-4">
+  <h3 class="text-3xl font-anaheim">Details</h3>
+  <div class="w-full px-4 mt-4">
+    {% if object_type|lower == "coinbasescriptsig" %}
+    <ul class="list-disc">
+      <li>
+        <span>Found in</span>
+        <a class="text-blue-600 hover:text-blue-800" 
+          href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+        <span>-></span>
+        <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
+          href="/tx/{{ content.coinbase_scriptsig.txin.tx.txid }}">Tx (n={{ content.coinbase_scriptsig.txin.tx.tx_n }}) {{ content.coinbase_scriptsig.txin.tx.txid|slice:"-8:" }}</a>
+      </li>
+    </ul>
+    {% elif object_type|lower == "opreturn" %}
+    <ul class="list-disc">
+      <li>
+        <span>Found in</span>
+        <a class="text-blue-600 hover:text-blue-800" 
+          href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+        <span>-></span>
+        <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
+          href="/tx/{{ content.op_return.tx.txid }}">Tx (n={{ content.op_return.txout.tx.n }}) {{ content.op_return.txout.tx.txid|slice:"-8:" }}</a>
+      </li>
+    </ul>
+    {% elif object_type|lower == "inscription" %}
+    <ul class="list-disc">
+      <li>
+        <span>Found in</span>
+        <a class="text-blue-600 hover:text-blue-800" 
+          href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+        <span>-></span>
+        <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
+          href="/tx/{{ content.inscription.txin.tx.txid }}">Tx (n={{ content.inscription.txin.tx.n }}) {{ content.inscription.txin.tx.txid|slice:"-8:" }}</a>
+      </li>
+    </ul>
+    {% endif %}
   </div>
 </div>
 
@@ -83,7 +155,7 @@
   <div class="bg-[#fff3cd] dark:bg-zinc-900 text-black dark:text-white shadow-lg p-6 max-w-sm w-full border border-zinc-900 dark:border-lime-500" style="border-radius:0;">
     <button class="absolute top-2 right-2 text-2xl text-zinc-400 hover:text-black dark:hover:text-white" id="tip_lightning_close" aria-label="Close" style="border-radius:0;">&times;</button>
     <div class="flex items-center mb-2">
-      <i class="fa-solid fa-bolt text-yellow-400 text-2xl mr-2"></i>
+      <i class="fa-solid fa-bolt text-yellow-900 text-2xl mr-2"></i>
       <h2 class="text-xl font-bold">Tip</h2>
     </div>
     <div class="flex flex-col items-center mb-2">
@@ -97,4 +169,16 @@
     <div id="tip_feedback" class="text-xs text-zinc-600 dark:text-lime-400 mt-2"></div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+  let metadata = document.getElementById('metadata');
+  let metadataToggle = document.getElementById('metadata_toggle');
+  metadataToggle.addEventListener('click', function() {
+    metadata.classList.toggle('hidden');
+    metadataToggle.classList.toggle('rotate-180');
+  });
+</script>
 {% endblock %}

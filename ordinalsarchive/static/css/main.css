@@ -36,3 +36,7 @@ body {
 #context_editor_container .ql-container.ql-snow {
   border: none !important;
 }
+
+.dark .triangle-svg-filter {
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(18deg) brightness(107%) contrast(102%) !important;
+}

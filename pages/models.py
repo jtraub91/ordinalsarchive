@@ -1,3 +1,4 @@
+from bits import compact_size_uint
 from django.contrib.auth.models import User  # pylint: disable=imported-auth-user
 from django.db import models
 
@@ -12,6 +13,24 @@ class Block(models.Model):
     bits = models.CharField()
     nonce = models.BigIntegerField()
 
+    coinbase_tx = models.BinaryField()
+    number_of_txns = models.IntegerField()
+
+    def serialized(self) -> bytes:
+        """
+        Return serialized block bytes, up to and including coinbase transaction
+        """
+        return (
+            self.version.to_bytes(4, "little")
+            + bytes.fromhex(self.prev_blockheaderhash)[::-1]
+            + bytes.fromhex(self.merkle_root)[::-1]
+            + self.time.to_bytes(4, "little")
+            + bytes.fromhex(self.bits)[::-1]
+            + self.nonce.to_bytes(8, "little")
+            + compact_size_uint(self.number_of_txns)
+            + self.coinbase_tx
+        )
+
     def __str__(self):
         return f"<Block height={self.blockheight}>"
 
@@ -24,7 +43,7 @@ class Tx(models.Model):
     wtxid = models.CharField()
 
     version = models.IntegerField()
-    locktime = models.IntegerField()
+    locktime = models.BigIntegerField()
 
     def __str__(self):
         return f"<Tx n={self.n} block={self.block}>"
@@ -63,8 +82,22 @@ class Content(models.Model):
         ContextRevision, on_delete=models.CASCADE, null=True
     )
 
+    def save(self):
+        if self.context_revision_id is None:
+            self.context_revision = ContextRevision()
+            self.context_revision.save()
+        super().save()
+
     def __str__(self):
-        return f"<Content hash={self.hash} mime_type={self.mime_type} size={self.size}>"
+        # pylint: disable=no-member
+        if self.inscription_id is not None:
+            return f"<Content hash={self.hash.hex()} mime_type={self.mime_type} size={self.size} inscription={self.inscription}>"
+        elif self.coinbase_scriptsig_id is not None:
+            return f"<Content hash={self.hash.hex()} mime_type={self.mime_type} size={self.size} coinbase_scriptsig={self.coinbase_scriptsig}>"
+        elif self.op_return_id is not None:
+            return f"<Content hash={self.hash.hex()} mime_type={self.mime_type} size={self.size} op_return={self.op_return}>"
+        return f"<Content hash={self.hash.hex()} mime_type={self.mime_type} size={self.size}>"
+        # pylint: enable=no-member
 
 
 class TxIn(models.Model):
@@ -128,12 +161,30 @@ class OpReturn(models.Model):
 
 class Inscription(models.Model):
     number = models.IntegerField(null=True)
-    hash = models.BinaryField(unique=True)
+    inscription_id = models.CharField(unique=True)
+
+    content_hash = models.BinaryField(null=True)
     content_type = models.CharField()
     content_size = models.IntegerField()
+
+    # MIME
+    mime_type = models.CharField()
+    mime_subtype = models.CharField()
+    mime_params = models.JSONField(default=dict)
+
     filename = models.CharField(null=True, unique=True)
-    text = models.TextField(default="")
-    json = models.JSONField(default=dict)
+    text = models.TextField(null=True, max_length=1024)
+    json = models.JSONField(null=True)
+
+    delegate = models.CharField(
+        null=True
+    )  # delegates this inscription to another's inscription_id
+    metadata = models.BinaryField(null=True)  # CBOR
+    pointer = models.BigIntegerField(
+        null=True
+    )  # pointer index to inscribe on sat other than sat 0
+    properties = models.BinaryField(null=True)  # CBOR
+    provenance = models.CharField(null=True)  # references parent inscription_id
 
     txin = models.ForeignKey(TxIn, on_delete=models.CASCADE)
 

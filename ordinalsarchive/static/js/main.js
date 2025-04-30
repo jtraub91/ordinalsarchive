@@ -13,7 +13,7 @@ document.querySelector('#order_toggle').addEventListener('click', function() {
   const order_select = document.getElementById("order_select");
   order_select.value = isDesc ? 'asc' : 'desc';
   const toggle = document.getElementById('order_toggle');
-  toggle.classList.toggle('fa-arrow-up');
+  toggle.classList.toggle('rotate-180');
   toggle.classList.toggle('fa-arrow-down');
   htmx.trigger(order_select, 'change');
 });

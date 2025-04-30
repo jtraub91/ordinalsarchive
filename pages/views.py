@@ -1,157 +1,153 @@
 import json
-import os
 from datetime import datetime, timezone
-from typing import Optional
 
+import bits.crypto
+import bits.bips.bip39
+import cbor2
+from bits.blockchain import Block
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 
 from . import models
+from .utils import get_object_from_s3
+
+
+def content_types(request):
+    mime_types = models.Content.objects.values_list("mime_type", flat=True).distinct()
+    return render(request, "components/content_types.html", {"mime_types": mime_types})
 
 
 def index(request):
     results = []
 
     # query parameters
-    object_types = request.GET.getlist("object_type")
-    content_types = request.GET.getlist("content_type")
+    object_types = request.GET.getlist(
+        "object_type", ["inscription", "opreturn", "coinbase"]
+    )
+    mime_types = request.GET.getlist("mime_type")
     sort = request.GET.get("sort", "date")
-    order = request.GET.get("order", "asc")
+    order = request.GET.get("order", "desc")
     view = request.GET.get("view", "gallery")
     query = request.GET.get("q")  # search query
 
-    # Get all possible object types/content types
-    all_object_types = ["inscription", "txin", "txout", "tx", "block"]
-    all_content_types = list(
-        models.Inscription.objects.values_list("content_type", flat=True).distinct()
-    )
-
-    # If all or none object types are selected, treat as no filtering
-    if not object_types or set(object_types) == set(all_object_types):
-        object_types = all_object_types
-    # If inscription is selected but no content types, treat as all content types
-    if "inscription" in object_types:
-        if not content_types or set(content_types) == set(all_content_types):
-            content_types = all_content_types
-    else:
-        content_types = []  # Ignore content types if inscription not selected
-
-    filter_query = Q()
-
-    if "inscription" in object_types:
-        # If inscription, filter by all selected content types
-        ct_q = Q()
-        for content_type in content_types:
-            ct_q |= Q(inscription__isnull=False) & Q(
-                inscription__content_type=content_type
-            )
-        filter_query &= ct_q
-    if "txin" in object_types:
-        filter_query |= Q(txin__isnull=False) & Q(txin__scriptsig_text__isnull=False)
-    if "txout" in object_types:
-        filter_query |= Q(txout__isnull=False) & Q(
-            txout__scriptpubkey_text__isnull=False
-        )
-    if "tx" in object_types:
-        filter_query |= Q(tx__isnull=False) & Q(tx__txid__isnull=False)
-    if "block" in object_types:
-        filter_query |= Q(block__isnull=False) & Q(block__blockheaderhash__isnull=False)
-
-    # Main queryset
-    objects = models.ContextRevision.objects.filter(filter_query)
-    # import ipdb; ipdb.set_trace()
-    # Apply search query as AND
+    q = Q()
     if query:
-        q_filter = (
-            Q(txin__scriptsig_text__icontains=query)
-            | Q(txout__scriptpubkey_text__icontains=query)
-            | Q(inscription__filename__icontains=query)
+        q = (
+            Q(coinbase_scriptsig__scriptsig_text__icontains=query)
+            | Q(op_return__scriptpubkey_text__icontains=query)
             | Q(inscription__content_type__icontains=query)
             | Q(inscription__text__icontains=query)
-            | Q(html__icontains=query)
+            | Q(context_revision__html__search=query)
         )
-        objects = objects.filter(q_filter)
 
-    # Sorting (default to date for now)
-    if sort == "date":
-        objects = objects.order_by("-block_time" if order == "desc" else "block_time")
-    else:
-        # Placeholder for relevance (use date for now)
-        objects = objects.order_by("-block_time" if order == "desc" else "block_time")
+    content_objects = models.Content.objects.filter(q).order_by(
+        "-block__time" if order == "desc" else "block__time"
+    )
+    content_objects = content_objects.filter(inscription__json__isnull=True)
 
-    paginator = Paginator(objects, 24)
+    q = Q()
+    if "inscription" not in object_types:
+        q = q & Q(inscription__isnull=True)
+    if "opreturn" not in object_types:
+        q = q & Q(op_return__isnull=True)
+    if "coinbase" not in object_types:
+        q = q & Q(coinbase_scriptsig__isnull=True)
+    content_objects = content_objects.filter(q)
+
+    if mime_types:
+        q = Q()
+        for mime_type in mime_types:
+            q = q | Q(mime_type=mime_type)
+        content_objects = content_objects.filter(q)
+
+    paginator = Paginator(content_objects, 12)
     page = request.GET.get("page")
     page_objects = paginator.get_page(page)
 
-    for ctx in page_objects:
-        if inscription := ctx.inscription_set.first():
-            if inscription.filename:
-                text = None
-                src = f"/static/inscriptions/{inscription.filename}"
-                text_json = None
-            else:
-                text = inscription.text
-                try:
-                    text_json = json.loads(text)
-                except json.JSONDecodeError:
-                    text_json = None
+    # block_objects = models.Block.objects.order_by("-time" if order == "desc" else "time")
+    # tx_objects = models.Tx.objects.order_by("-block__time" if order == "desc" else "block__time")
+
+    # def sort_fn(o):
+    #     if hasattr(o, "time"):
+    #         return o.time
+    #     else:
+    #         return o.block.time
+
+    # objects = sorted(list(content_objects) + list(block_objects) + list(tx_objects), key=sort_fn, reverse=True if order == "desc" else False)
+
+    # paginator = Paginator(objects, 24)
+    # page = request.GET.get("page")
+    # page_objects = paginator.get_page(page)
+
+    for obj in page_objects:
+        if isinstance(obj, models.Content):
+            if obj.inscription:
+                object_type = "Inscription"
+                src = (
+                    f"/static/inscriptions/{obj.inscription.filename}"
+                    if obj.inscription.filename
+                    else None
+                )
+                text = obj.inscription.text
+                text_json = obj.inscription.json
+                block = obj.inscription.txin.tx.block
+                txid = obj.inscription.txin.tx.txid
+            elif obj.op_return:
+                object_type = "OpReturn"
                 src = None
-            blockheight = inscription.txin.tx.block.blockheight
-            txid = inscription.txin.tx.txid
-            random = None
-        elif txin := ctx.txin_set.first():
-            text = txin.scriptsig_text
+                text = obj.op_return.scriptpubkey_text
+                text_json = None
+                block = obj.op_return.txout.tx.block
+                txid = obj.op_return.txout.tx.txid
+            elif obj.coinbase_scriptsig:
+                object_type = "CoinbaseScriptsig"
+                src = None
+                text = obj.coinbase_scriptsig.scriptsig_text
+                text_json = None
+                block = obj.coinbase_scriptsig.txin.tx.block
+                txid = obj.coinbase_scriptsig.txin.tx.txid
+            else:
+                return HttpResponseBadRequest()
+            url = f"/context/{obj.context_revision.id}"
+        elif isinstance(obj, models.Block):
+            object_type = "Block"
             src = None
-            blockheight = txin.tx.block.blockheight
-            txid = txin.tx.txid
-            random = bin(int.from_bytes(os.urandom(128)))
+            text = None
             text_json = None
-        elif txout := ctx.txout_set.first():
-            text = txout.scriptpubkey_text
-            src = None
-            blockheight = txout.tx.block.blockheight
-            txid = txout.tx.txid
-            random = bin(int.from_bytes(os.urandom(128)))
-            text_json = None
-        elif tx := ctx.tx_set.first():
-            text = tx.txid
-            src = None
-            blockheight = tx.block.blockheight
-            txid = tx.txid
-            random = None
-            text_json = None
-        elif block := ctx.block_set.first():
-            text = block.blockheaderhash
-            blockheight = block.blockheight
-            src = None
+            block = obj
             txid = None
-            random = None
+            url = f"/block/{obj.blockheaderhash}"
+        elif isinstance(obj, models.Tx):
+            object_type = "Tx"
+            src = None
+            text = None
             text_json = None
+            block = obj.block
+            txid = obj.txid
+            url = f"/tx/{obj.txid}"
         else:
-            src = None
-            text = str(ctx)
-            blockheight = None
-            txid = None
-            random = None
-            text_json = None
-        strf_format = "%Y-%m-%d %H:%M:%S %Z"
-        block_timestamp = datetime.fromtimestamp(
-            ctx.block_time, tz=timezone.utc
-        ).strftime(strf_format)
+            return HttpResponseBadRequest()
+
+        block_timestamp = datetime.fromtimestamp(block.time, tz=timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S %Z"
+        )
 
         results.append(
             {
-                "context_revision": ctx,
-                "url": f"/context/{ctx.id}",
+                "object_type": object_type,
+                "content": obj,
+                "mime_type": obj.mime_type.split("/")[0],
+                "mime_subtype": obj.mime_type.split("/")[1],
+                "url": url,
                 "src": src,
                 "text": text,
                 "text_json": text_json,
-                "brc_20": True if text_json else False,
-                "blockheight": blockheight,
+                "blockheight": block.blockheight,
                 "block_timestamp": block_timestamp,
                 "txid": txid,
-                "random": random,
+                "block_binary": Block(block.serialized()).bin(),
             }
         )
 
@@ -162,9 +158,6 @@ def index(request):
     else:
         next_page_url = None
 
-    query_object_types = request.GET.getlist("object_type")
-    query_content_types = request.GET.getlist("content_type")
-
     if request.headers.get("HX-Request"):
         return render(
             request,
@@ -172,53 +165,61 @@ def index(request):
             context={
                 "results": results,
                 "next_page_url": next_page_url,
-                "object_types": ["Inscription", "TxIn", "TxOut", "Tx", "Block"],
-                "content_types": content_types,
-                "query_object_types": query_object_types,
-                "query_content_types": query_content_types,
             },
         )
-    content_types = models.Inscription.objects.values_list(
-        "content_type", flat=True
-    ).distinct()
     return render(
         request,
         "base.html",
         context={
             "results": results,
             "next_page_url": next_page_url,
-            "object_types": ["Inscription", "TxIn", "TxOut", "Tx", "Block"],
-            "content_types": content_types,
-            "view": view,
-            "query_object_types": query_object_types,
-            "query_content_types": query_content_types,
         },
     )
 
 
-def block(request, blockheaderhash: Optional[str] = None):
-    if blockheaderhash is None:
-        return render(request, "base.html", context={})
-    block = models.Block.objects.filter(blockheaderhash=blockheaderhash).first()
+def block(request, blockheaderhash: str):
+    offset = request.GET.get("offset", 0)
+    limit = request.GET.get("limit", 4096)
+    fmt = request.GET.get("fmt", "hex")
+
+    block = get_object_or_404(models.Block, blockheaderhash=blockheaderhash)
+
+    block_data = get_object_from_s3(
+        f"block{block.blockheight}.bin", offset=offset
+    ).read(limit)
+    # block_json = get_object_from_s3(f"block{block.blockheight}.json").read(MAX_BYTES).decode("utf-8")
+    if request.headers.get("Content-Type") == "application/json":
+        return JsonResponse(
+            {
+                "blockhex": block_data.hex(),
+            }
+        )
     return render(
         request,
         "block.html",
         context={
+            "next_offset": int(offset) + 2**12,
             "blockheight": block.blockheight if block else None,
             "blockheaderhash": block.blockheaderhash,
-            "blockjson": json.dumps(
-                {
-                    "blockheight": block.blockheight,
-                    "blockheaderhash": block.blockheaderhash,
-                    "version": block.version,
-                    "prev_blockheaderhash": block.prev_blockheaderhash,
-                    "merkle_root": block.merkle_root,
-                    "time": block.time,
-                    "bits": block.bits,
-                    "nonce": block.nonce,
-                },
-                indent=2,
-            ),
+            "blockhex": block_data.hex(),
+            # "blockjson": block_json,
+        },
+    )
+
+
+def tx(request, txid: str):
+    tx = get_object_or_404(models.Tx, txid=txid)
+    block_data = get_object_from_s3(f"block{tx.block.blockheight}.bin").read()
+    block = Block(block_data).dict(json_serializable=True)
+    tx_json = json.dumps(
+        next(filter(lambda tx_: tx_["txid"] == txid, block["txns"])), indent=2
+    )
+    return render(
+        request,
+        "tx.html",
+        context={
+            "txid": tx.txid if tx else None,
+            "txjson": tx_json,
         },
     )
 
@@ -245,73 +246,41 @@ def context_revision(request, context_id):
 
 def context(request, context_id: int):
     context_row = models.ContextRevision.objects.get(id=context_id)
-    if inscription := context_row.inscription_set.first():
+    content = context_row.content_set.first()
+    if content.inscription:
         object_type = "Inscription"
-        if inscription.filename:
-            content_src = f"/static/inscriptions/{inscription.filename}"
-            content_text = None
-            content_size = inscription.content_size
+        if content.inscription.metadata:
+            metadata = cbor2.loads(content.inscription.metadata)
         else:
-            content_src = None
-            content_text = inscription.text
-            content_size = inscription.content_size
-        content_type = inscription.content_type
-        block = inscription.txin.tx.block
-        tx = inscription.txin.tx
-        txout = None
-        txin = inscription.txin
-    elif txin := context_row.txin_set.first():
-        object_type = "Txin"
-        content_src = None
-        content_text = txin.scriptsig_text
-        content_size = len(txin.scriptsig_text) if txin.scriptsig_text else 0
-        content_type = "text/plain;charset=utf8"
-        block = txin.tx.block
-        tx = txin.tx
-        txout = None
-    elif txout := context_row.txout_set.first():
-        object_type = "Txout"
-        content_src = None
-        content_text = txout.scriptpubkey_text
-        content_size = len(txout.scriptpubkey_text) if txout.scriptpubkey_text else 0
-        content_type = "text/plain;charset=utf8"
-        block = txout.tx.block
-        tx = txout.tx
-        txin = None
-    elif tx := context_row.tx_set.first():
-        object_type = "Tx"
-        content_src = None
-        content_text = tx.txid
-        content_size = len(tx.txid)
-        content_type = "text/plain;charset=utf8"
-        block = tx.block
-        txout = None
-        txin = None
-    elif block := context_row.block_set.first():
-        object_type = "Block"
-        content_src = None
-        content_text = block.blockheaderhash
-        content_size = len(block.blockheaderhash)
-        content_type = "text/plain;charset=utf8"
-        tx = None
-        txout = None
-        txin = None
+            metadata = {}
+    elif content.coinbase_scriptsig:
+        object_type = "CoinbaseScriptsig"
+        metadata = {}
+    elif content.op_return:
+        object_type = "OpReturn"
+        metadata = {}
+    else:
+        return HttpResponseBadRequest()
+    block_timestamp = datetime.fromtimestamp(
+        content.block.time, tz=timezone.utc
+    ).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    content_type = f"{content.mime_type}; "
+    for key, value in content.params.items():
+        content_type += f"{key}={value}; "
     return render(
         request,
         "context.html",
         context={
             "object_type": object_type,
+            "block_timestamp": block_timestamp,
+            "content": content,
             "content_type": content_type,
-            "content_src": content_src,
-            "content_text": content_text,
-            "content_size": content_size,
-            "context_html": context_row.html,
-            "context_id": context_row.id,
-            "blockheight": block.blockheight,
-            "blockheaderhash": block.blockheaderhash,
-            "tx_n": tx.n if tx else None,
-            "txid": tx.txid if tx else None,
-            "txout_n": txout.n if txout else None,
-            "txin_n": txin.n if txin else None,
+            "content_metadata": metadata,
+            "mime_type": content.mime_type.split("/")[0],
+            "context": context_row,
+            "context_revision_hash": bits.crypto.hash256(
+                (str(context_row.id) + context_row.html).encode("utf-8")
+            ).hex(),
         },
     )
