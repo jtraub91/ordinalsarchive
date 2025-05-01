@@ -237,9 +237,6 @@ class Command(BaseCommand):
                                 inscriptions = parse_inscriptions(elem)
                             except ValueError as err:
                                 log.error(f"Failed to parse inscriptions: {err}")
-                                import ipdb
-
-                                ipdb.set_trace()
                                 continue
                             for inscription in inscriptions:
                                 content_type = inscription["content_type"]

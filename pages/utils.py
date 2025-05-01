@@ -1,9 +1,12 @@
+import logging
 from typing import List
 
 import boto3
 from bits import constants
 import botocore
 from django.conf import settings
+
+log = logging.getLogger(__name__)
 
 
 def upload_to_s3(key: str, content: bytes | str) -> str:

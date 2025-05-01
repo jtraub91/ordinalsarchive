@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="w-full mt-4">
+<div class="w-full mt-4 flex flex-col min-w-xs max-w-xl">
   <div class="m-auto border border-zinc-900 dark:border-lime-500">
-    <!-- Content -->
     <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
       {% if object_type|lower == "coinbasescriptsig" %}
       <div class="p-4">
@@ -16,7 +15,7 @@
       {% elif object_type|lower == "inscription" %}
       {% if mime_type == "image" %}
       <a href="/static/inscriptions/{{ content.inscription.filename }}" target="_blank">
-        <img class="w-full h-full" src="/static/inscriptions/{{ content.inscription.filename }}"/>
+        <img class="w-full" src="/static/inscriptions/{{ content.inscription.filename }}"/>
       </a>
       {% elif mime_type == "audio" %}
       <audio src="/static/inscriptions/{{ content.inscription.filename }}" controls></audio>
@@ -44,9 +43,7 @@
       {% endif %}
     </div>
   </div>
-</div>
 
-<div class="flex flex-col w-full min-w-xs ">
   <div class="w-full mt-4 flex flex-row justify-between">
     {% if object_type|lower == "coinbasescriptsig" %}
     <div class="flex flex-col items-start">
@@ -66,8 +63,7 @@
       </div>
     </div>
     {% endif %}
-    <i hx-get="/lightning-tip/{{ object_type }}/{{ object_hash }}" id="tip_lightning_btn"
-      class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-200" title="Tip this content"></i>
+    <i id="tip_lightning_btn" class="my-auto cursor-pointer fa-solid fa-bolt text-2xl hover:text-yellow-500 dark:hover:text-cyan-500" title="Tip this content"></i>
   </div>
   <div class="flex flex-row">
     <img id="metadata_toggle" src="/static/images/triangle.svg" 
@@ -86,84 +82,90 @@
       <span>metadata.{{ key }}: {{ value }}</span>
     {% endfor %}
   </div>
-</div>
 
-<div class="w-full mt-4">
-  <div class="flex justify-between m-auto">
-    <div class="flex">
-      <h3 class="text-3xl font-anaheim">Context</h3>
-      <span class="text-xs mx-2 mt-auto mb-1">rev {{ context_revision_hash|slice:"-8:" }}</span>
+  <div class="w-full mt-4">
+    <div class="flex justify-between m-auto">
+      <div class="flex">
+        <h3 class="text-3xl font-anaheim">Context</h3>
+        <span class="text-xs mx-2 mt-auto mb-1">rev {{ context_revision_hash|slice:"-8:" }}</span>
+      </div>
+      <div class="flex gap-2">
+        <button class="flex cursor-pointer text-2xl" id="context_edit">
+          <i class="fa-solid fa-pen-to-square my-auto"></i>
+        </button>
+        <button class="cursor-pointer hidden text-2xl" id="context_save">
+          <i class="fa-solid fa-download my-auto"></i>
+        </button>
+        <button class="cursor-pointer hidden text-2xl" id="context_cancel">
+          <i class="fa-solid fa-rotate-left my-auto"></i>
+        </button>
+      </div>
     </div>
-    <div class="flex gap-2">
-      <button class="flex cursor-pointer text-2xl" id="context_edit">
-        <i class="fa-solid fa-pen-to-square my-auto"></i>
-      </button>
-      <button class="cursor-pointer hidden text-2xl" id="context_save">
-        <i class="fa-solid fa-download my-auto"></i>
-      </button>
-      <button class="cursor-pointer hidden text-2xl" id="context_cancel">
-        <i class="fa-solid fa-rotate-left my-auto"></i>
-      </button>
+    {% include "components/context_editor.html" %}
+  </div>
+
+  <div class="w-full mt-4">
+    <h3 class="text-3xl font-anaheim">Details</h3>
+    <div class="w-full px-4 mt-4">
+      {% if object_type|lower == "coinbasescriptsig" %}
+      <ul class="list-disc">
+        <li>
+          <span>Found in</span>
+          <a class="text-blue-600 hover:text-blue-800" 
+            href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+          <span>-></span>
+          <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
+            href="/tx/{{ content.coinbase_scriptsig.txin.tx.txid }}">Tx (n={{ content.coinbase_scriptsig.txin.tx.tx_n }}) {{ content.coinbase_scriptsig.txin.tx.txid|slice:"-8:" }}</a>
+        </li>
+      </ul>
+      {% elif object_type|lower == "opreturn" %}
+      <ul class="list-disc">
+        <li>
+          <span>Found in</span>
+          <a class="text-blue-600 hover:text-blue-800" 
+            href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+          <span>-></span>
+          <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
+            href="/tx/{{ content.op_return.tx.txid }}">Tx (n={{ content.op_return.txout.tx.n }}) {{ content.op_return.txout.tx.txid|slice:"-8:" }}</a>
+        </li>
+      </ul>
+      {% elif object_type|lower == "inscription" %}
+      <ul class="list-disc">
+        <li>
+          <span>Found in</span>
+          <a class="text-blue-600 hover:text-blue-800" 
+            href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+          {% comment %}
+            <span>-></span>
+            <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
+            href="/tx/{{ content.inscription.txin.tx.txid }}">Tx (n={{ content.inscription.txin.tx.n }}) {{ content.inscription.txin.tx.txid|slice:"-8:" }}</a>
+          {% endcomment %}
+        </li>
+      </ul>
+      {% endif %}
     </div>
   </div>
-  {% include "components/context_editor.html" %}
 </div>
 
-<!-- Details -->
-<div class="w-full mt-4">
-  <h3 class="text-3xl font-anaheim">Details</h3>
-  <div class="w-full px-4 mt-4">
-    {% if object_type|lower == "coinbasescriptsig" %}
-    <ul class="list-disc">
-      <li>
-        <span>Found in</span>
-        <a class="text-blue-600 hover:text-blue-800" 
-          href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
-        <span>-></span>
-        <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
-          href="/tx/{{ content.coinbase_scriptsig.txin.tx.txid }}">Tx (n={{ content.coinbase_scriptsig.txin.tx.tx_n }}) {{ content.coinbase_scriptsig.txin.tx.txid|slice:"-8:" }}</a>
-      </li>
-    </ul>
-    {% elif object_type|lower == "opreturn" %}
-    <ul class="list-disc">
-      <li>
-        <span>Found in</span>
-        <a class="text-blue-600 hover:text-blue-800" 
-          href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
-        <span>-></span>
-        <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
-          href="/tx/{{ content.op_return.tx.txid }}">Tx (n={{ content.op_return.txout.tx.n }}) {{ content.op_return.txout.tx.txid|slice:"-8:" }}</a>
-      </li>
-    </ul>
-    {% elif object_type|lower == "inscription" %}
-    <ul class="list-disc">
-      <li>
-        <span>Found in</span>
-        <a class="text-blue-600 hover:text-blue-800" 
-          href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
-        <span>-></span>
-        <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
-          href="/tx/{{ content.inscription.txin.tx.txid }}">Tx (n={{ content.inscription.txin.tx.n }}) {{ content.inscription.txin.tx.txid|slice:"-8:" }}</a>
-      </li>
-    </ul>
-    {% endif %}
-  </div>
-</div>
+
+
 
 <!-- Lightning Tip Modal -->
 <div id="tip_lightning_modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 hidden" role="dialog" aria-modal="true">
   <div class="bg-[#fff3cd] dark:bg-zinc-900 text-black dark:text-white shadow-lg p-6 max-w-sm w-full border border-zinc-900 dark:border-lime-500" style="border-radius:0;">
     <button class="absolute top-2 right-2 text-2xl text-zinc-400 hover:text-black dark:hover:text-white" id="tip_lightning_close" aria-label="Close" style="border-radius:0;">&times;</button>
     <div class="flex items-center mb-2">
-      <i class="fa-solid fa-bolt text-yellow-900 text-2xl mr-2"></i>
+      <i class="fa-solid fa-bolt text-yellow-500 text-2xl mr-2"></i>
       <h2 class="text-xl font-bold">Tip</h2>
     </div>
-    <div class="flex flex-col items-center mb-2">
-      <div id="lightning_qr" class="w-36 h-36 flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-900 dark:border-lime-500 mb-2" style="border-radius:0;">
-        <span class="text-zinc-400 dark:text-gray-500">[QR CODE]</span>
+    <div class="flex flex-col items-center gap-1">
+      <div class="flex items-center justify-center bg-white dark:bg-zinc-800 border border-zinc-900 dark:border-lime-500 mb-2" style="border-radius:0;">
+        <img id="lightning_qr" src="{{ qr_data_uri }}" alt="QR Code" class="text-zinc-400 dark:text-gray-500"/>
       </div>
       <div class="w-full">
-        <code id="lightning_invoice" class="bg-white dark:bg-zinc-800 border border-zinc-900 dark:border-lime-500 p-2 text-xs select-all block cursor-pointer whitespace-pre-line break-words w-full text-black dark:text-white" style="border-radius:0;">lnbc1dummybolt11invoiceexamplethatcanbeverylongandmayrequirehorizontalorscroll...</code>
+        <code id="lightning_invoice" class="bg-white dark:bg-zinc-800 border border-zinc-900 dark:border-lime-500 p-2 text-xs select-all block cursor-pointer whitespace-pre-line break-words w-full text-black dark:text-white" style="border-radius:0;">
+          {{ bolt11 }}
+        </code>
       </div>
     </div>
     <div id="tip_feedback" class="text-xs text-zinc-600 dark:text-lime-400 mt-2"></div>
@@ -180,5 +182,65 @@
     metadata.classList.toggle('hidden');
     metadataToggle.classList.toggle('rotate-180');
   });
+
+  let litData = null;
+
+  (function() {
+  const tipBtn = document.getElementById('tip_lightning_btn');
+  const tipModal = document.getElementById('tip_lightning_modal');
+  const tipClose = document.getElementById('tip_lightning_close');
+  const invoiceEl = document.getElementById('lightning_invoice');
+  const feedbackEl = document.getElementById('tip_feedback');
+  const qrEl = document.getElementById('lightning_qr');
+
+  
+  if (tipBtn && tipModal && tipClose) {
+    tipBtn.addEventListener('click', () => {
+      tipModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      if (!litData) {
+        fetch('/lit', {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+          },
+        }).then(response => response.json())
+          .then(data => {
+            litData = data;
+            invoiceEl.textContent = data.bolt11;
+            qrEl.src = data.qr_data_uri;
+          })
+          .catch(error => {
+            console.error('Error fetching lightning invoice:', error);
+          });
+      }
+    });
+    tipClose.addEventListener('click', () => {
+      tipModal.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+    tipModal.addEventListener('click', (e) => {
+      if (e.target === tipModal) {
+        tipModal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        tipModal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+  if (invoiceEl && feedbackEl) {
+    invoiceEl.addEventListener('click', () => {
+      navigator.clipboard.writeText(invoiceEl.textContent).then(() => {
+        feedbackEl.textContent = 'Invoice copied!';
+        setTimeout(() => { feedbackEl.textContent = ''; }, 1200);
+      });
+    });
+  }
+})();
 </script>
 {% endblock %}

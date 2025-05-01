@@ -24,9 +24,10 @@ from pages import views
 urlpatterns = [
     path("", views.index),
     path("block/<str:blockheaderhash>", views.block),
-    path("tx/<str:txid>", views.tx),
+    # path("tx/<str:txid>", views.tx),
     path("context/<int:context_id>", views.context),
     path("context/revision/<int:context_id>", views.context_revision),
     path("content_types", views.content_types),
+    path("lit", views.lit),
     path("admin/", admin.site.urls),
 ]

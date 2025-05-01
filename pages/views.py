@@ -1,14 +1,20 @@
+import base64
 import json
+import io
+import time
 from datetime import datetime, timezone
 
 import bits.crypto
 import bits.bips.bip39
 import cbor2
+import qrcode
 from bits.blockchain import Block
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
+from glclient import Credentials, Scheduler, clnpb
+
 
 from . import models
 from .utils import get_object_from_s3
@@ -45,7 +51,15 @@ def index(request):
     content_objects = models.Content.objects.filter(q).order_by(
         "-block__time" if order == "desc" else "block__time"
     )
-    content_objects = content_objects.filter(inscription__json__isnull=True)
+
+    if not (mime_types or query):
+        # just display inscription images if we don't have any advanced filters
+        # hack to make site look cool
+        content_objects = content_objects.filter(
+            inscription__json__isnull=True,
+            inscription__isnull=False,
+            inscription__mime_type="image",
+        )
 
     q = Q()
     if "inscription" not in object_types:
@@ -180,13 +194,22 @@ def index(request):
 def block(request, blockheaderhash: str):
     offset = request.GET.get("offset", 0)
     limit = request.GET.get("limit", 4096)
+    try:
+        limit = int(limit)
+    except ValueError:
+        limit = 4096
     fmt = request.GET.get("fmt", "hex")
 
     block = get_object_or_404(models.Block, blockheaderhash=blockheaderhash)
 
-    block_data = get_object_from_s3(
-        f"block{block.blockheight}.bin", offset=offset
-    ).read(limit)
+    if limit == -1:
+        block_data = get_object_from_s3(
+            f"block{block.blockheight}.bin", offset=offset
+        ).read()
+    else:
+        block_data = get_object_from_s3(
+            f"block{block.blockheight}.bin", offset=offset
+        ).read(limit)
     # block_json = get_object_from_s3(f"block{block.blockheight}.json").read(MAX_BYTES).decode("utf-8")
     if request.headers.get("Content-Type") == "application/json":
         return JsonResponse(
@@ -283,4 +306,28 @@ def context(request, context_id: int):
                 (str(context_row.id) + context_row.html).encode("utf-8")
             ).hex(),
         },
+    )
+
+
+def lit(request):
+    creds = Credentials.from_path(".gl-certs/creds-2")
+    scheduler = Scheduler("testnet", creds)
+    node = scheduler.node()
+    timestamp = int(1000 * time.time())
+    # pylint: disable=no-member
+    invoice = node.invoice(
+        amount_msat=clnpb.AmountOrAny(amount=clnpb.Amount(msat=10000)),
+        description=f"Test invoice - {timestamp}",
+        label=f"inv{timestamp}",
+    )
+    # pylint: enable=no-member
+    barray = io.BytesIO()
+    qr = qrcode.make(invoice.bolt11)
+    qr.save(barray, format="png")
+    qb = base64.b64encode(barray.getvalue()).decode("utf-8")
+    return JsonResponse(
+        {
+            "bolt11": invoice.bolt11,
+            "qr_data_uri": f"data:image/png;base64,{qb}",
+        }
     )

@@ -2,19 +2,10 @@
 
 {% block content %}
 <div class="flex flex-col items-center w-full">
-  <div class="w-full max-w-3xl mt-4 px-4">
+  <div class="w-full max-w-3xl mt-4">
     <h2 class="text-3xl font-anaheim">Block {{ blockheight }}</h2>
   </div>
-  
-  <!-- <div class="w-full max-w-3xl px-2 relative my-4">
-    <div class="break-words font-mono text-sm bg-gray-50 border border-gray-200 p-4">
-      <p id="hex-content">
-        0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000
-      </p>
-    </div>
-  </div> -->
-
-  <div class="w-full max-w-3xl px-2 relative my-4">
+  <div class="w-full max-w-3xl relative my-4">
     <!-- <div class="absolute right-2 top-2 z-10">
       <button class="text-green-400 hover:text-green-300"
               onclick="navigator.clipboard.writeText(document.getElementById('json-content').innerText)">
@@ -31,7 +22,7 @@
     </form>
     
     <div class="border border-gray-300 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 text-black dark:text-green-400">
-      <pre id="block_content" class="m-2 font-mono text-sm break-all whitespace-pre-wrap max-w-full">{{ blockhex }}</pre><div class="loading"></div>
+      <pre id="block_content" class="select-none m-2 font-mono text-sm break-all whitespace-pre-wrap max-w-full">{{ blockhex }}<span class="loading"></span></pre>
       <span id="block_trail"></span>
     </div>
   </div>
@@ -68,6 +59,8 @@
     }
   </style>
   <script>
+    const loadingSpan = document.createElement('span');
+    loadingSpan.classList.add('loading');
 
     const block_trail = document.getElementById('block_trail');
     const block_content = document.getElementById('block_content');
@@ -102,6 +95,7 @@
         .then(response => response.json())
         .then(data => {
           block_content.innerText += data.blockhex;
+          block_content.append(loadingSpan);
           request_is_active = false;
         })
         .catch(error => {
@@ -109,6 +103,39 @@
           request_is_active = false;
         });
     }
+
+    // let fetchingFullBlock = false;
+    // block_content.addEventListener("dblclick", ()=>{
+    //   if (fetchingFullBlock) {
+    //     return;
+    //   }
+    //   fetchingFullBlock = true;
+    //   block_content.classList.toggle("opacity-50");
+    //   block_content.classList.toggle("blur-xs");
+    //   fetch(`/block/${blockheaderhash}?offset=0&limit=-1`, {
+    //     method: 'GET',
+    //     headers: {
+    //       'X-Requested-With': 'XMLHttpRequest',
+    //       'Content-Type': 'application/json',
+    //     },
+    //   })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //       navigator.clipboard.writeText(data.blockhex);
+    //       alert("Block hex copied to clipboard");
+    //       block_content.innerText = data.blockhex;
+    //       block_content.classList.toggle("opacity-50");
+    //       block_content.classList.toggle("blur-xs");
+    //       fetchingFullBlock = false;
+    //     })
+    //     .catch(error => {
+    //       console.error('Error fetching block hex:', error);
+    //       alert("Error fetching block hex");
+    //       block_content.classList.toggle("opacity-50");
+    //       block_content.classList.toggle("blur-xs");
+    //       fetchingFullBlock = false;
+    //     });
+    // })
 
     window.addEventListener('scroll', function() {
         if (isInViewport(block_trail)) {
