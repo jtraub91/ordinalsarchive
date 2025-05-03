@@ -55,8 +55,7 @@ def get_object_head_from_s3(key: str) -> True:
         endpoint_url=settings.S3_ENDPOINT_URL,
     )
     try:
-        s3.head_object(Bucket=settings.S3_BUCKET_NAME, Key=key)
-        return True
+        return s3.head_object(Bucket=settings.S3_BUCKET_NAME, Key=key)
     except botocore.exceptions.ClientError as e:
         return False
 

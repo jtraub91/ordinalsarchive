@@ -12,12 +12,12 @@ from bits.blockchain import Block
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from glclient import Credentials, Scheduler, clnpb
 
 
 from . import models
-from .utils import get_object_from_s3
+from .utils import get_object_from_s3, get_object_head_from_s3
 
 
 def content_types(request):
@@ -36,6 +36,8 @@ def index(request):
     sort = request.GET.get("sort", "date")
     order = request.GET.get("order", "desc")
     view = request.GET.get("view", "gallery")
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
     query = request.GET.get("q")  # search query
 
     q = Q()
@@ -47,19 +49,22 @@ def index(request):
             | Q(inscription__text__icontains=query)
             | Q(context_revision__html__search=query)
         )
+    if start_date:
+        try:
+            start_timestamp = datetime.fromisoformat(start_date).timestamp()
+            q = q & Q(block__time__gte=int(start_timestamp))
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            end_timestamp = datetime.fromisoformat(end_date).timestamp()
+            q = q & Q(block__time__lte=int(end_timestamp))
+        except ValueError:
+            pass
 
     content_objects = models.Content.objects.filter(q).order_by(
         "-block__time" if order == "desc" else "block__time"
     )
-
-    if not (mime_types or query):
-        # just display inscription images if we don't have any advanced filters
-        # hack to make site look cool
-        content_objects = content_objects.filter(
-            inscription__json__isnull=True,
-            inscription__isnull=False,
-            inscription__mime_type="image",
-        )
 
     q = Q()
     if "inscription" not in object_types:
@@ -199,33 +204,73 @@ def block(request, blockheaderhash: str):
     except ValueError:
         limit = 4096
     fmt = request.GET.get("fmt", "hex")
+    if fmt not in ["hex", "json"]:
+        # default to hex if format is not valid
+        fmt = "hex"
+    # determine file ext in s3 based on fmt
+    if fmt == "hex":
+        ext = ".bin"
+    elif fmt == "json":
+        ext = ".json"
 
     block = get_object_or_404(models.Block, blockheaderhash=blockheaderhash)
-
+    block_head_s3 = get_object_head_from_s3(f"block{block.blockheight}{ext}")
+    print(block_head_s3)
     if limit == -1:
-        block_data = get_object_from_s3(
-            f"block{block.blockheight}.bin", offset=offset
-        ).read()
+        if fmt == "hex":
+            content = (
+                get_object_from_s3(f"block{block.blockheight}.bin", offset=offset)
+                .read()
+                .hex()
+            )
+        elif fmt == "json":
+            content = (
+                get_object_from_s3(f"block{block.blockheight}.json", offset=offset)
+                .read()
+                .decode("utf-8")
+            )
+        else:
+            content = ""
     else:
-        block_data = get_object_from_s3(
-            f"block{block.blockheight}.bin", offset=offset
-        ).read(limit)
-    # block_json = get_object_from_s3(f"block{block.blockheight}.json").read(MAX_BYTES).decode("utf-8")
+        if fmt == "hex":
+            print(offset)
+            content = (
+                get_object_from_s3(f"block{block.blockheight}.bin", offset=offset)
+                .read(limit)
+                .hex()
+            )
+        elif fmt == "json":
+            content = (
+                get_object_from_s3(f"block{block.blockheight}.json", offset=offset)
+                .read(limit)
+                .decode("utf-8")
+            )
+        else:
+            content = ""
+
     if request.headers.get("Content-Type") == "application/json":
         return JsonResponse(
             {
-                "blockhex": block_data.hex(),
+                "contentlength": block_head_s3.get("ContentLength"),
+                "fmt": fmt,
+                "offset": int(offset),
+                "limit": int(limit),
+                "blockheight": block.blockheight,
+                "blockheaderhash": block.blockheaderhash,
+                "content": content,
             }
         )
     return render(
         request,
         "block.html",
         context={
-            "next_offset": int(offset) + 2**12,
-            "blockheight": block.blockheight if block else None,
+            "contentlength": block_head_s3.get("ContentLength"),
+            "fmt": fmt,
+            "offset": int(offset),
+            "limit": int(limit),
+            "blockheight": block.blockheight,
             "blockheaderhash": block.blockheaderhash,
-            "blockhex": block_data.hex(),
-            # "blockjson": block_json,
+            "content": content,
         },
     )
 
@@ -331,3 +376,7 @@ def lit(request):
             "qr_data_uri": f"data:image/png;base64,{qb}",
         }
     )
+
+
+def content(request, inscription_id: str):
+    return redirect(f"https://ordinals.com/{inscription_id}")

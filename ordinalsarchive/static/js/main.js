@@ -15,7 +15,8 @@ document.querySelector('#order_toggle').addEventListener('click', function() {
   const toggle = document.getElementById('order_toggle');
   toggle.classList.toggle('rotate-180');
   toggle.classList.toggle('fa-arrow-down');
-  htmx.trigger(order_select, 'change');
+  htmx.trigger(toggle.closest('form'), 'change');
+  console.log("t")
 });
 
 document.querySelector('#filters_toggle').addEventListener('click', function() {

@@ -30,7 +30,7 @@
           {% elif result.mime_type == "text" %}
             {% if result.mime_subtype == "html" %}
             <div class="w-full h-full relative flex">
-              <iframe class="w-full h-full pointer-events-none" src="{{ result.src }}"></iframe>
+              <iframe sandbox="allow-scripts" class="w-full h-full pointer-events-none" src="{{ result.src }}"></iframe>
               <!-- <div class="w-full h-full absolute">
                 <span class="text-xs bottom-0 right-0 absolute">
                   {{ result.content.mime_type }}

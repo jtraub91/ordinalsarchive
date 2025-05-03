@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block content %}
 <div class="w-full mt-4 flex flex-col min-w-xs max-w-xl">
   <div class="m-auto border border-zinc-900 dark:border-lime-500">
@@ -14,7 +14,7 @@
       </div>
       {% elif object_type|lower == "inscription" %}
       {% if mime_type == "image" %}
-      <a href="/static/inscriptions/{{ content.inscription.filename }}" target="_blank">
+      <a href="{% static 'inscriptions/' + content.inscription.filename %}" target="_blank">
         <img class="w-full" src="/static/inscriptions/{{ content.inscription.filename }}"/>
       </a>
       {% elif mime_type == "audio" %}
@@ -113,9 +113,11 @@
           <span>Found in</span>
           <a class="text-blue-600 hover:text-blue-800" 
             href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+          {% comment %}
           <span>-></span>
           <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
             href="/tx/{{ content.coinbase_scriptsig.txin.tx.txid }}">Tx (n={{ content.coinbase_scriptsig.txin.tx.tx_n }}) {{ content.coinbase_scriptsig.txin.tx.txid|slice:"-8:" }}</a>
+          {% endcomment %}
         </li>
       </ul>
       {% elif object_type|lower == "opreturn" %}
@@ -124,9 +126,11 @@
           <span>Found in</span>
           <a class="text-blue-600 hover:text-blue-800" 
             href="/block/{{ content.block.blockheaderhash }}">Block {{ content.block.blockheight }}</a>
+          {% comment %}
           <span>-></span>
           <a class="text-xs tracking-tighter text-blue-600 hover:text-blue-800" 
             href="/tx/{{ content.op_return.tx.txid }}">Tx (n={{ content.op_return.txout.tx.n }}) {{ content.op_return.txout.tx.txid|slice:"-8:" }}</a>
+          {% endcomment %}
         </li>
       </ul>
       {% elif object_type|lower == "inscription" %}

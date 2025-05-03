@@ -2,28 +2,48 @@
 
 {% block content %}
 <div class="flex flex-col items-center w-full">
-  <div class="w-full max-w-3xl mt-4">
+  <div class="w-full max-w-3xl mt-4 flex flex-row justify-between">
     <h2 class="text-3xl font-anaheim">Block {{ blockheight }}</h2>
+    
+    
   </div>
   <div class="w-full max-w-3xl relative my-4">
-    <!-- <div class="absolute right-2 top-2 z-10">
-      <button class="text-green-400 hover:text-green-300"
-              onclick="navigator.clipboard.writeText(document.getElementById('json-content').innerText)">
-        <i class="fa-solid fa-copy"></i>
-      </button>
-    </div> -->
-    <form hx-get="{{ request.path }}" hx-push-url="true" hx-trigger="click" class="hidden">
-      <div class="flex flex-row">
-        <label for="raw_json">raw</label>
-        <input class="opacity-0 w-0 h-0"
-          type="checkbox" name="raw_json" id="raw_json" checked/>
-        <label for="raw_json">json</label>
-      </div>
-    </form>
-    
     <div class="border border-gray-300 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 text-black dark:text-green-400">
-      <pre id="block_content" class="select-none m-2 font-mono text-sm break-all whitespace-pre-wrap max-w-full">{{ blockhex }}<span class="loading"></span></pre>
-      <span id="block_trail"></span>
+      <div class="absolute -top-6 right-0 mr-0 w-full">
+        <div class="dark:text-white text-black text-xs flex">
+          <label class="dark:text-white text-black select-none flex my-auto mr-0 ml-auto cursor-pointer"
+            for="hex_json" title="hex">
+            <span title="hex">
+              0101
+            </span>
+            <div class="inline-block w-7 h-4 relative my-auto mr-2 ml-2" title="format">
+              <input class="sr-only peer"
+                type="checkbox" 
+                name="hex_json" 
+                id="hex_json"/>
+              <span id="hex_json_span"
+                class="absolute dark:bg-lime-500 dark:opacity-50 bg-gray-300 duration-300 transition-all top-0 left-0 right-0 bottom-0 ">
+              </span>
+              <span class="h-3 w-3 bottom-0 top-0.5 left-0.5 right-0.5 bg-black absolute transition-all peer-checked:translate-x-3">
+              </span>
+            </div>
+            <span title="json">
+              {}
+            </span>
+          </label>
+        </div>
+      </div>
+      {% if fmt == 'hex' %}
+      <pre 
+        id="block_content_hex" 
+        class="m-2 font-mono text-sm whitespace-pre-wrap break-all max-w-full">{{ content }}{% if content|length < contentlength %}<span class="loading" id="block_trail_hex"></span>{% endif %}</pre>
+      <pre id="block_content_json" class="m-2 font-mono text-sm overflow-x-scroll max-w-full hidden"><div class="loading" id="block_trail_json"></div></pre>
+     {% else %}
+      <pre 
+        id="block_content_hex" 
+        class="m-2 font-mono text-sm whitespace-pre-wrap break-all max-w-full hidden"><span class="loading" id="block_trail_hex"></span></pre>
+      <pre id="block_content_json" class="m-2 font-mono text-sm overflow-x-scroll max-w-full">{{ content }}{% if content|length < contentlength %}<div class="loading" id="block_trail_json"></div>{% endif %}</pre>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -45,6 +65,13 @@
       content: "\2026"; /* ascii code for the ellipsis character */
       width: 0px;
     }
+    #block_content_json::-webkit-scrollbar {
+      display: none;
+    }
+    #block_content_json {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
     @keyframes ellipsis {
       to {
@@ -59,19 +86,29 @@
     }
   </style>
   <script>
-    const loadingSpan = document.createElement('span');
-    loadingSpan.classList.add('loading');
+    const format = new URLSearchParams(window.location.search).get('fmt') || 'hex';
+    const hex_json_input = document.getElementById('hex_json');
+    if (format === 'json') {
+      hex_json_input.checked = true;
+    } else {
+      hex_json_input.checked = false;
+    }
 
-    const block_trail = document.getElementById('block_trail');
-    const block_content = document.getElementById('block_content');
+    const block_content_hex = document.getElementById('block_content_hex');
+    const block_trail_hex = document.getElementById('block_trail_hex');
+
+    const block_content_json = document.getElementById('block_content_json');
+    const block_trail_json = document.getElementById('block_trail_json');
 
     const blockheaderhash = window.location.pathname.split('/').pop();
-    console.log(blockheaderhash)
 
     let request_is_active = false;
 
     function isInViewport(element) {
       const bounding = element.getBoundingClientRect();
+      if (bounding.top == 0 && bounding.left == 0 && bounding.right == 0 && bounding.bottom == 0) {
+        return false;
+      }
       return (
         bounding.top >= 0 &&
         bounding.left >= 0 &&
@@ -85,7 +122,7 @@
         return;
       }
       request_is_active = true;
-      fetch(`/block/${blockheaderhash}?offset=${block_content.innerText.length}`, {
+      fetch(`/block/${blockheaderhash}?offset=${block_content_hex.innerText.length/2}`, {
         method: 'GET',
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
@@ -93,9 +130,12 @@
         },
       })
         .then(response => response.json())
-        .then(data => {
-          block_content.innerText += data.blockhex;
-          block_content.append(loadingSpan);
+        .then(resp => {
+          block_content_hex.innerText += resp.content;
+          let bytelen = block_content_hex.innerText.length / 2;  // hex is 2 chars per byte
+          if (bytelen < resp.contentlength) {
+            block_content_hex.append(block_trail_hex);
+          }
           request_is_active = false;
         })
         .catch(error => {
@@ -104,43 +144,168 @@
         });
     }
 
-    // let fetchingFullBlock = false;
-    // block_content.addEventListener("dblclick", ()=>{
-    //   if (fetchingFullBlock) {
-    //     return;
-    //   }
-    //   fetchingFullBlock = true;
-    //   block_content.classList.toggle("opacity-50");
-    //   block_content.classList.toggle("blur-xs");
-    //   fetch(`/block/${blockheaderhash}?offset=0&limit=-1`, {
-    //     method: 'GET',
-    //     headers: {
-    //       'X-Requested-With': 'XMLHttpRequest',
-    //       'Content-Type': 'application/json',
-    //     },
-    //   })
-    //     .then(response => response.json())
-    //     .then(data => {
-    //       navigator.clipboard.writeText(data.blockhex);
-    //       alert("Block hex copied to clipboard");
-    //       block_content.innerText = data.blockhex;
-    //       block_content.classList.toggle("opacity-50");
-    //       block_content.classList.toggle("blur-xs");
-    //       fetchingFullBlock = false;
-    //     })
-    //     .catch(error => {
-    //       console.error('Error fetching block hex:', error);
-    //       alert("Error fetching block hex");
-    //       block_content.classList.toggle("opacity-50");
-    //       block_content.classList.toggle("blur-xs");
-    //       fetchingFullBlock = false;
-    //     });
-    // })
+    function requestBlockJson() {
+      if (request_is_active) {
+        return;
+      }
+      request_is_active = true;
+      fetch(`/block/${blockheaderhash}?offset=${block_content_json.innerText.length}&fmt=json`, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+        },
+      })
+        .then(response => response.json())
+        .then(resp => {
+          block_content_json.innerText += resp.content;
+          if (block_content_json.innerText.length < resp.contentlength) {
+            block_content_json.append(block_trail_json);
+          }
+          request_is_active = false;
+        })
+        .catch(error => {
+          console.error('Error fetching block json:', error);
+          request_is_active = false;
+        });
+    }
 
-    window.addEventListener('scroll', function() {
-        if (isInViewport(block_trail)) {
+    function randomHex(){
+      let hexChars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+      return hexChars[Math.floor(Math.random() * 16)];
+    }
+    function writeRandom(){
+      let r = "";
+      for (let i = 0; i < 64; i++) {
+        r += randomHex();
+      }
+      return r;
+    }
+    function estimateVisibleTextIndices(el){
+      // estimate the range of chars that are visibile in viewport
+      const style = window.getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      const lineHeight = parseInt(style.lineHeight || style.fontSize);
+      const fontWidth = parseInt(style.fontSize);
+
+      const elTop = rect.top;
+      const elBottom = rect.bottom;
+
+      const visibleTop = Math.max(0, elTop)
+      const visibleBottom = Math.min(elBottom, window.innerHeight);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+
+      // Create a temporary element to measure text width
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.visibility = 'hidden';
+      tempDiv.style.whiteSpace = 'nowrap';
+      tempDiv.style.font = style.font;
+      document.body.appendChild(tempDiv);
+
+      // Use a sample text to measure width
+      tempDiv.textContent = '0123456789abcdef';
+      const sampleWidth = tempDiv.offsetWidth;
+      
+      // Calculate average character width
+      const avgCharWidth = sampleWidth / tempDiv.textContent.length;
+
+      const charsPerLine = Math.floor(rect.width / avgCharWidth);
+
+      document.body.removeChild(tempDiv);
+
+      const visibleLines = Math.ceil(visibleHeight / lineHeight);
+      const linesScrolled = Math.floor((visibleTop - elTop) / lineHeight);
+
+      return [linesScrolled * charsPerLine, (linesScrolled + visibleLines) * charsPerLine];
+    }
+
+    let fetchingFullBlock = false;
+    function dblClickBlockContentHex(){
+      if (fetchingFullBlock) {
+        return;
+      }
+      fetchingFullBlock = true;
+      let iHandler = setInterval(() => {
+        let est = estimateVisibleTextIndices(block_content_hex);
+        let arr = block_content_hex.innerText.split('');
+        for (let i = est[0]; i < est[1]; i++) {
+          arr[i] = randomHex();
+        }
+        block_content_hex.innerText = arr.join('');
+      }, 1000/40);
+      block_content_hex.classList.toggle("opacity-50");
+      block_content_hex.classList.toggle("blur-xs");
+      fetch(`/block/${blockheaderhash}?offset=0&limit=-1`, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+        },
+      })
+        .then(response => response.json())
+        .then(data => {
+          navigator.clipboard.writeText(data.content);
+          clearInterval(iHandler);
+          block_trail_hex.remove();
+          block_content_hex.removeEventListener("dblclick", dblClickBlockContentHex);
+          block_content_hex.innerText = data.content;
+          let notification = document.createElement('div');
+          notification.style.position = "fixed";
+          notification.style.top = "50%";
+          notification.style.left = "50%";
+          notification.style.transform = "translate(-50%, -50%)";
+          notification.style.padding = "10px";
+          notification.style.zIndex = "1000";
+          notification.classList.add("bg-gray-50", "border-2", "border-zinc-900", "text-black", "dark:bg-black", "dark:text-white", "dark:border-lime-500");
+          notification.textContent = "Copied to clipboard";
+          document.body.appendChild(notification);
+          setTimeout(() => {
+            notification.remove();
+            block_content_hex.classList.toggle("opacity-50");
+            block_content_hex.classList.toggle("blur-xs");
+          }, 1369);
+          fetchingFullBlock = false;
+          
+        })
+        .catch(error => {
+          console.error('Error fetching block hex:', error);
+          clearInterval(iHandler);
+          block_content.classList.toggle("opacity-50");
+          block_content.classList.toggle("blur-xs");
+          fetchingFullBlock = false;
+        });
+    }
+    block_content_hex.addEventListener("dblclick", dblClickBlockContentHex);
+
+    hex_json_input.addEventListener("change", function(event) {
+      block_content_hex.classList.toggle("hidden");
+      block_content_json.classList.toggle("hidden");
+      if (event.srcElement.checked) {
+        window.history.pushState({}, null, '?fmt=json');
+        if (!block_content_json.innerText) {
+          requestBlockJson();
+        }
+      } else {
+        window.history.pushState({}, null, '?fmt=hex');
+        if (!block_content_hex.innerText) {
           requestBlockHex();
         }
+      }
+    });
+      
+
+    window.addEventListener('scroll', function() {
+      if (hex_json_input.checked) {
+        if (isInViewport(block_trail_json)) {
+          requestBlockJson();
+        }
+      } else {
+        if (isInViewport(block_trail_hex)) {
+          console.log(block_trail_hex)
+          requestBlockHex();
+        }
+      }
     });
 
   </script>

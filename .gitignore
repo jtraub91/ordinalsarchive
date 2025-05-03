@@ -1,6 +1,7 @@
-.staticfiles
-*.dump
-venv
+staticfiles
 logs
-node_modules
+media
+
 __pycache__
+venv
+node_modules

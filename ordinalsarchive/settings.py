@@ -131,24 +131,28 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = os.environ.get("DJANGO_STATIC_URL", "/static/")
 STATICFILES_DIRS = [
     BASE_DIR / "ordinalsarchive" / "static",
     BASE_DIR / "pages" / "static",
 ]
-STATIC_ROOT = BASE_DIR / ".staticfiles"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-INSCRIPTIONS_DIR = BASE_DIR / "pages" / "static" / "inscriptions"
-if not INSCRIPTIONS_DIR.exists():
-    INSCRIPTIONS_DIR.mkdir(parents=True)
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "")
+
+if not MEDIA_ROOT.exists():
+    MEDIA_ROOT.mkdir()
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOG_FILE = os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "logs" / "django.log")
-Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
+LOG_FILE = os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "logs" / "ordinalsarchive.log")
+if not Path(LOG_FILE).exists():
+    Path(LOG_FILE).mkdir(parents=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -164,9 +168,7 @@ LOGGING = {
         },
         "file": {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.environ.get(
-                "DJANGO_LOG_FILE", BASE_DIR / "logs" / "django.log"
-            ),
+            "filename": LOG_FILE,
             "formatter": "default",
             "maxBytes": 1024 * 1024 * 5,
             "backupCount": 5,

@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ordinals Archive</title>
-    <link rel="icon" href="/static/images/favicon.png">
-    <link href="/static/dist/tailwind.css" rel="stylesheet">
-    <link href="/static/dist/fontawesome-free/css/all.min.css" rel="stylesheet">
-    <link href="/static/dist/quill/quill.snow.css" rel="stylesheet">
-    <link href="/static/css/main.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/favicon.png' %}">
+    <link href="{% static 'dist/tailwind.css' %}" rel="stylesheet">
+    <link href="{% static 'dist/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
+    <link href="{% static 'dist/quill/quill.snow.css' %}" rel="stylesheet">
+    <link href="{% static 'css/main.css' %}" rel="stylesheet">
 
     <script>
       (function() {
@@ -25,12 +25,12 @@
   </head>
   <body class="bg-[#fff3cd] dark:bg-black dark:text-white transition-colors">
     <canvas id="bg-canvas" class="hidden dark:block fixed top-0 left-0 -z-10 pointer-events-none"></canvas>
-    <form action="/" method="get" hx-get="/" hx-target="#content" hx-push-url="true" hx-trigger="change from:this, input delay:100ms, keyup[key=='Enter']">
+    <form action="/" method="get" hx-get="/" hx-target="#content" hx-push-url="true" hx-trigger="change, input delay:100ms">
       <div class="flex h-16">
         <div>
           <a href="/">
             <img class="inline-block md:hidden h-full"
-              src="/static/images/logo.svg" alt="Ordinals Archive Logo"/>
+              src="{% static 'images/logo.svg' %}" alt="Ordinals Archive Logo"/>
             <h1 class="text-6xl font-anton hidden md:block">Archive</h1>
           </a>
         </div>
@@ -39,6 +39,7 @@
             <input 
               value="{{ request.GET.q|default_if_none:'' }}"
               name="q"
+              id="q"
               class="w-full h-full p-2 border-b-2 text-lg placeholder:text-sm md:placeholder:text-lg tracking-tighter md:tracking-normal md:text-lg lg:text-2xl border-black dark:border-pink-500 placeholder:text-center placeholder:text-gray-700 dark:placeholder:text-gray-300 dark:placeholder:text-center"
               type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
@@ -151,9 +152,9 @@
       </div>
     </div>
     {% block scripts %}
-    <script src="/static/dist/htmx.min.js"></script>
-    <script src="/static/dist/quill/quill.js"></script>
-    <script src="/static/js/main.js"></script>
+    <script src="{% static 'dist/htmx.min.js' %}"></script>
+    <script src="{% static 'dist/quill/quill.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
     {% endblock %}
   </body>
 </html>
