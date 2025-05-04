@@ -139,8 +139,8 @@ STATIC_ROOT = os.environ.get("DJANGO_STATIC_ROOT", BASE_DIR / "static")
 MEDIA_ROOT = os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media")
 MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "/media/")
 
-if not MEDIA_ROOT.exists():
-    MEDIA_ROOT.mkdir()
+if not Path(MEDIA_ROOT).exists():
+    Path(MEDIA_ROOT).mkdir()
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
