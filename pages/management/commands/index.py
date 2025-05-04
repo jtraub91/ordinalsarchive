@@ -293,11 +293,11 @@ class Command(BaseCommand):
                                             else content_hash.hex()
                                         )
                                     if filename:
-                                        filepath = settings.INSCRIPTIONS_DIR / filename
+                                        filepath = settings.MEDIA_ROOT / filename
                                         with filepath.open("wb") as fp:
                                             fp.write(content)
                                         log.info(
-                                            f"{filename} saved to {settings.INSCRIPTIONS_DIR}"
+                                            f"{filename} saved to {settings.MEDIA_ROOT}"
                                         )
 
                                 inscription_id = f"{txn['txid']}i{inscription_index}"
