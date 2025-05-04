@@ -134,7 +134,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "ordinalsarchive" / "static",
     BASE_DIR / "pages" / "static",
 ]
-STATIC_ROOT = BASE_DIR / "static"
+STATIC_ROOT = os.environ.get("DJANGO_STATIC_ROOT", BASE_DIR / "static")
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "/media/")

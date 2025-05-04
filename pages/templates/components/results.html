@@ -28,6 +28,10 @@
           {% elif result.mime_type == "image" %}
             <img class="object-cover object-center w-full h-full"
               src="{{ MEDIA_URL }}{{ result.filename }}"/>
+	  {% elif result.mime_type == "video" %}
+            <video class="object-cover object-center w-full h-full" src="{{ MEDIA_URL }}{{ result.filename }}" controls></video>
+          {% elif result.mime_type == "audio" %}
+            <audio class="object-cover object-center w-full h-full" src="{{ MEDIA_URL }}{{ result.filename }}" controls></audio> 
           {% elif result.mime_type == "text" %}
             {% if result.mime_subtype == "html" %}
             <div class="w-full h-full relative flex">
