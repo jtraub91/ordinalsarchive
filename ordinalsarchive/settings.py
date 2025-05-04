@@ -136,7 +136,7 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = os.environ.get("DJANGO_STATIC_ROOT", BASE_DIR / "static")
 
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media")
 MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "/media/")
 
 if not MEDIA_ROOT.exists():
