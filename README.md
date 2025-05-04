@@ -48,7 +48,6 @@ The following environment variables can be specified
 - `DJANGO_S3_SECRET_KEY` (default: None)
 - `DJANGO_S3_BUCKET_NAME` (default: None)
 - `DJANGO_S3_ENDPOINT_URL` (default: None)
-```
 
 ## Static files
 
