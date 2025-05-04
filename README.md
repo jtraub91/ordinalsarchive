@@ -15,7 +15,7 @@ npm install
 
 ## DB Setup
 
-1. Install Postgres 17
+1. Install Postgres
 
 2. Create database and user
 

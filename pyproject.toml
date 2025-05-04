@@ -21,6 +21,7 @@ dependencies = [
     "botocore (==1.29.0)",
     "cbor2 (>=5.6.5,<6.0.0)",
     "psycopg-binary (>=3.2.7,<4.0.0)",
+    "legacy-cgi (>=2.6.3,<3.0.0) ; python_version >= \"3.13\"",
 ]
 
 
