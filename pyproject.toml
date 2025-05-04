@@ -13,7 +13,6 @@ dependencies = [
     "bits @ git+https://github.com/jtraub91/bits.git@dev",
     "requests (>=2.32.3,<3.0.0)",
     "psycopg (>=3.2.6,<4.0.0)",
-    "dotenv (>=0.9.9,<0.10.0)",
     "daphne (>=4.1.2,<5.0.0)",
     "gunicorn (>=23.0.0,<24.0.0)",
     "gl-client (>=0.3.0,<0.4.0)",

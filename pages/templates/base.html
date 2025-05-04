@@ -112,9 +112,9 @@
                 </select>
               </div>
               {% if request.GET.order == "asc" %}
-              <img class="cursor-pointer transform mt-0.5 triangle-svg-filter" src="/static/images/triangle.png" title="sort" id="order_toggle"/>
+              <img class="cursor-pointer transform mt-0.5 triangle-svg-filter" src="{% static 'images/triangle.png' %}" title="sort" id="order_toggle"/>
               {% else %}
-              <img class="cursor-pointer transform mt-0.5 rotate-180 triangle-svg-filter" src="/static/images/triangle.png" title="sort" id="order_toggle"/>
+              <img class="cursor-pointer transform mt-0.5 rotate-180 triangle-svg-filter" src="{% static 'images/triangle.png' %}" title="sort" id="order_toggle"/>
               {% endif %}
               <div class="hidden">
                 <label for="order_select">

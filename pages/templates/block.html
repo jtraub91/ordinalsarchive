@@ -2,10 +2,12 @@
 
 {% block content %}
 <div class="flex flex-col items-center w-full">
-  <div class="w-full max-w-3xl mt-4 flex flex-row justify-between">
+  <div class="w-full max-w-3xl mt-4">
     <h2 class="text-3xl font-anaheim">Block {{ blockheight }}</h2>
     
-    
+    <div class="flex flex-row justify-between">
+      size: {{ readable_size }}
+    </div>
   </div>
   <div class="w-full max-w-3xl relative my-4">
     <div class="border border-gray-300 dark:border-lime-500 bg-gray-50 dark:bg-zinc-900 text-black dark:text-green-400">
@@ -233,9 +235,9 @@
           arr[i] = randomHex();
         }
         block_content_hex.innerText = arr.join('');
-      }, 1000/40);
+      }, 1000/120);
       block_content_hex.classList.toggle("opacity-50");
-      block_content_hex.classList.toggle("blur-xs");
+      // block_content_hex.classList.toggle("blur-xs");
       fetch(`/block/${blockheaderhash}?offset=0&limit=-1`, {
         method: 'GET',
         headers: {
@@ -245,11 +247,11 @@
       })
         .then(response => response.json())
         .then(data => {
-          navigator.clipboard.writeText(data.content);
           clearInterval(iHandler);
+          block_content_hex.innerText = data.content;
           block_trail_hex.remove();
           block_content_hex.removeEventListener("dblclick", dblClickBlockContentHex);
-          block_content_hex.innerText = data.content;
+          
           let notification = document.createElement('div');
           notification.style.position = "fixed";
           notification.style.top = "50%";
@@ -263,7 +265,7 @@
           setTimeout(() => {
             notification.remove();
             block_content_hex.classList.toggle("opacity-50");
-            block_content_hex.classList.toggle("blur-xs");
+            // block_content_hex.classList.toggle("blur-xs");
           }, 1369);
           fetchingFullBlock = false;
           
@@ -272,7 +274,7 @@
           console.error('Error fetching block hex:', error);
           clearInterval(iHandler);
           block_content.classList.toggle("opacity-50");
-          block_content.classList.toggle("blur-xs");
+          // block_content.classList.toggle("blur-xs");
           fetchingFullBlock = false;
         });
     }
@@ -295,18 +297,17 @@
     });
       
 
-    window.addEventListener('scroll', function() {
+    setInterval(() => {
       if (hex_json_input.checked) {
         if (isInViewport(block_trail_json)) {
           requestBlockJson();
         }
       } else {
         if (isInViewport(block_trail_hex)) {
-          console.log(block_trail_hex)
           requestBlockHex();
         }
       }
-    });
+    }, 1000);
 
   </script>
 {% endblock %}

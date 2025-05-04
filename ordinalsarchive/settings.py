@@ -13,9 +13,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,14 +21,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True if os.environ.get("DJANGO_DEBUG") in ["1", "True", "true"] else False
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
     "django-insecure-@j@s)t_lopb3co26#vtun147l1g*^wu^f!w70ex=9_z!)%a22t",
 )
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if os.environ.get("DJANGO_DEBUG") in ["1", "True", "true"] else False
 
 allowed_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", [])
 if allowed_hosts:
@@ -75,6 +72,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.media",
             ],
         },
     },
@@ -88,11 +86,11 @@ WSGI_APPLICATION = "ordinalsarchive.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["DJANGO_DB_NAME"],
-        "USER": os.environ["DJANGO_DB_USER"],
-        "PASSWORD": os.environ["DJANGO_DB_PASSWORD"],
-        "HOST": os.environ["DJANGO_DB_HOST"],
-        "PORT": os.environ["DJANGO_DB_PORT"],
+        "NAME": os.environ.get("DJANGO_DB_NAME"),
+        "USER": os.environ.get("DJANGO_DB_USER"),
+        "PASSWORD": os.environ.get("DJANGO_DB_PASSWORD"),
+        "HOST": os.environ.get("DJANGO_DB_HOST", "127.0.0.1"),
+        "PORT": os.environ.get("DJANGO_DB_PORT", "5432"),
     }
 }
 
@@ -136,10 +134,10 @@ STATICFILES_DIRS = [
     BASE_DIR / "ordinalsarchive" / "static",
     BASE_DIR / "pages" / "static",
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "static"
 
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "")
+MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "/media/")
 
 if not MEDIA_ROOT.exists():
     MEDIA_ROOT.mkdir()
@@ -149,40 +147,25 @@ if not MEDIA_ROOT.exists():
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOG_FILE = os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "logs" / "ordinalsarchive.log")
-if not Path(LOG_FILE).exists():
-    Path(LOG_FILE).mkdir(parents=True)
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {
-        "default": {
-            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
-        }
-    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "default",
+            "formatter": "console",
         },
-        "file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOG_FILE,
-            "formatter": "default",
-            "maxBytes": 1024 * 1024 * 5,
-            "backupCount": 5,
-        },
-    },
-    "root": {
-        "handlers": ["console", "file"],
-        "level": "INFO",
     },
     "loggers": {
-        "django": {
-            "handlers": ["console", "file"],
+        "": {
+            "handlers": ["console"],
             "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
             "propagate": True,
+        },
+    },
+    "formatters": {
+        "console": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s] %(message)s",
         },
     },
 }

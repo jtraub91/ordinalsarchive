@@ -1,6 +1,7 @@
 import base64
-import json
 import io
+import json
+import logging
 import time
 from datetime import datetime, timezone
 
@@ -17,7 +18,10 @@ from glclient import Credentials, Scheduler, clnpb
 
 
 from . import models
-from .utils import get_object_from_s3, get_object_head_from_s3
+from .utils import get_object_from_s3, get_object_head_from_s3, readable_size
+
+
+log = logging.getLogger(__name__)
 
 
 def content_types(request):
@@ -104,25 +108,21 @@ def index(request):
         if isinstance(obj, models.Content):
             if obj.inscription:
                 object_type = "Inscription"
-                src = (
-                    f"/static/inscriptions/{obj.inscription.filename}"
-                    if obj.inscription.filename
-                    else None
-                )
+                filename = obj.inscription.filename
                 text = obj.inscription.text
                 text_json = obj.inscription.json
                 block = obj.inscription.txin.tx.block
                 txid = obj.inscription.txin.tx.txid
             elif obj.op_return:
                 object_type = "OpReturn"
-                src = None
+                filename = None
                 text = obj.op_return.scriptpubkey_text
                 text_json = None
                 block = obj.op_return.txout.tx.block
                 txid = obj.op_return.txout.tx.txid
             elif obj.coinbase_scriptsig:
                 object_type = "CoinbaseScriptsig"
-                src = None
+                filename = None
                 text = obj.coinbase_scriptsig.scriptsig_text
                 text_json = None
                 block = obj.coinbase_scriptsig.txin.tx.block
@@ -132,7 +132,7 @@ def index(request):
             url = f"/context/{obj.context_revision.id}"
         elif isinstance(obj, models.Block):
             object_type = "Block"
-            src = None
+            filename = None
             text = None
             text_json = None
             block = obj
@@ -140,7 +140,7 @@ def index(request):
             url = f"/block/{obj.blockheaderhash}"
         elif isinstance(obj, models.Tx):
             object_type = "Tx"
-            src = None
+            filename = None
             text = None
             text_json = None
             block = obj.block
@@ -160,7 +160,7 @@ def index(request):
                 "mime_type": obj.mime_type.split("/")[0],
                 "mime_subtype": obj.mime_type.split("/")[1],
                 "url": url,
-                "src": src,
+                "filename": filename,
                 "text": text,
                 "text_json": text_json,
                 "blockheight": block.blockheight,
@@ -196,9 +196,9 @@ def index(request):
     )
 
 
-def block(request, blockheaderhash: str):
+def block(request, block_identifier: str):
     offset = request.GET.get("offset", 0)
-    limit = request.GET.get("limit", 4096)
+    limit = request.GET.get("limit", 1024)
     try:
         limit = int(limit)
     except ValueError:
@@ -213,9 +213,14 @@ def block(request, blockheaderhash: str):
     elif fmt == "json":
         ext = ".json"
 
-    block = get_object_or_404(models.Block, blockheaderhash=blockheaderhash)
+    try:
+        blockheight = int(block_identifier)
+        block = get_object_or_404(models.Block, blockheight=blockheight)
+    except ValueError:
+        blockheaderhash = block_identifier
+        block = get_object_or_404(models.Block, blockheaderhash=blockheaderhash)
+
     block_head_s3 = get_object_head_from_s3(f"block{block.blockheight}{ext}")
-    print(block_head_s3)
     if limit == -1:
         if fmt == "hex":
             content = (
@@ -251,6 +256,7 @@ def block(request, blockheaderhash: str):
     if request.headers.get("Content-Type") == "application/json":
         return JsonResponse(
             {
+                "readable_size": readable_size(block_head_s3.get("ContentLength")),
                 "contentlength": block_head_s3.get("ContentLength"),
                 "fmt": fmt,
                 "offset": int(offset),
@@ -264,6 +270,7 @@ def block(request, blockheaderhash: str):
         request,
         "block.html",
         context={
+            "readable_size": readable_size(block_head_s3.get("ContentLength")),
             "contentlength": block_head_s3.get("ContentLength"),
             "fmt": fmt,
             "offset": int(offset),

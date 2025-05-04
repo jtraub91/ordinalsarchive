@@ -1,3 +1,4 @@
+{% load static %}
 <div class="my-4 flex flex-col">
   <div class="flex flex-wrap gap-4 mx-auto max-w-3xl justify-center">
     {% for result in results %}
@@ -22,21 +23,21 @@
                   BRC-20 Inscription
                 </span>
               </div>
-              <img class="m-auto" src="/static/images/Bitcoin_old.png"/>
+              <img class="m-auto" src="{% static 'images/Bitcoin_old.png' %}"/>
             </div>
           {% elif result.mime_type == "image" %}
             <img class="object-cover object-center w-full h-full"
-              src="{{ result.src }}"/>
+              src="{{ MEDIA_URL }}{{ result.filename }}"/>
           {% elif result.mime_type == "text" %}
             {% if result.mime_subtype == "html" %}
             <div class="w-full h-full relative flex">
-              <iframe sandbox="allow-scripts" class="w-full h-full pointer-events-none" src="{{ result.src }}"></iframe>
+              <iframe sandbox="allow-scripts" class="w-full h-full pointer-events-none" src="{{ MEDIA_URL }}{{ result.filename }}"></iframe>
               <!-- <div class="w-full h-full absolute">
                 <span class="text-xs bottom-0 right-0 absolute">
                   {{ result.content.mime_type }}
                 </span>
               </div>
-              <img class="m-auto w-16" src="/static/images/html.svg"/> -->
+              <img class="m-auto w-16" src="{% static 'images/html.svg' %}"/> -->
             </div>
             {% else %}
             <div>
@@ -82,7 +83,7 @@
         {% elif result.object_type == 'OpReturn' %}
         <div class="w-full h-full relative flex">
           <div class="absolute flex flex-col px-0.5 triangle-svg-filter">
-            <img src="/static/images/envelope.svg" class="w-6 h-6"/>
+            <img src="{% static 'images/envelope.svg' %}" class="w-6 h-6"/>
           </div>
           <div class="w-full h-full absolute">
             <span class="text-xs bottom-0 right-0 absolute p-0.5">

@@ -220,3 +220,12 @@ def parse_inscriptions(witness_element: bytes | str) -> List[dict]:
         ord_envelope_begin = witness_element.find(b"\x00\x63\x03ord")
 
     return inscriptions
+
+
+def readable_size(size: int | str) -> str:
+    # https://stackoverflow.com/a/58467404/10808696
+    units = ("KB", "MB", "GB", "TB")
+    size_list = [f"{int(size):,} B"] + [
+        f"{int(size) / 1024 ** (i + 1):,.1f} {u}" for i, u in enumerate(units)
+    ]
+    return [size for size in size_list if not size.startswith("0.")][-1]
