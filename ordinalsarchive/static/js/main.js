@@ -24,6 +24,11 @@ document.querySelector('#filters_toggle').addEventListener('click', function() {
   toggle.classList.toggle('hidden');
 });
 
+document.querySelector('#calendar_toggle').addEventListener('click', function() {
+  let toggle = document.getElementById('calendar');
+  toggle.classList.toggle('hidden');
+});
+
 const canvas = document.getElementById('bg-canvas');
 
 function resizeCanvas(canvas) {
@@ -78,6 +83,14 @@ const filtersCloseBtn = document.getElementById('filters_close');
 if (filtersCloseBtn) {
   filtersCloseBtn.addEventListener('click', function() {
     document.getElementById('filters').classList.add('hidden');
+  });
+}
+
+// Calendar dropdown close button logic
+const calendarCloseBtn = document.getElementById('calendar_close');
+if (calendarCloseBtn) {
+  calendarCloseBtn.addEventListener('click', function() {
+    document.getElementById('calendar').classList.add('hidden');
   });
 }
 

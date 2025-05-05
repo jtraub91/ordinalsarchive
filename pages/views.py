@@ -25,6 +25,8 @@ log = logging.getLogger(__name__)
 
 
 def content_types(request):
+    # mime_type in the content model is actually {mime_type}/{mime_subtype}
+    # TODO: content model needs to be reworked or removed, but maybe can eventually be refactored for search indexing
     mime_types = models.Content.objects.values_list("mime_type", flat=True).distinct()
     return render(request, "components/content_types.html", {"mime_types": mime_types})
 
@@ -32,122 +34,89 @@ def content_types(request):
 def index(request):
     results = []
 
-    # query parameters
-    object_types = request.GET.getlist(
-        "object_type", ["inscription", "opreturn", "coinbase"]
-    )
     mime_types = request.GET.getlist("mime_type")
-    sort = request.GET.get("sort", "date")
     order = request.GET.get("order", "desc")
-    view = request.GET.get("view", "gallery")
+    # sort = request.GET.get("sort", "date")
+    # view = request.GET.get("view", "gallery")
+    filters = request.GET.getlist("filter")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
-    query = request.GET.get("q")  # search query
+    query = request.GET.get("q")
 
-    q = Q()
-    if query:
-        q = (
-            Q(coinbase_scriptsig__scriptsig_text__icontains=query)
-            | Q(op_return__scriptpubkey_text__icontains=query)
-            | Q(inscription__content_type__icontains=query)
-            | Q(inscription__text__icontains=query)
-            | Q(context_revision__html__search=query)
-        )
+    content_query = Q()
+    for filter_ in filters:
+        if filter_ in ["inscription", "op_return", "coinbase_scriptsig"]:
+            kwarg = {f"{filter_}__isnull": True}
+            content_query &= Q(**kwarg)
+        else:
+            # mime_type
+            content_query &= ~Q(mime_type=filter_)
+    content_objects = models.Content.objects.filter(content_query)
+
+    content_query = Q()
+    if mime_types:
+        for mime_type in mime_types:
+            content_query |= Q(mime_type__startswith=mime_type)
+        content_objects = content_objects.filter(content_query)
+
+    content_query = Q()
     if start_date:
         try:
             start_timestamp = datetime.fromisoformat(start_date).timestamp()
-            q = q & Q(block__time__gte=int(start_timestamp))
+            content_query &= Q(block__time__gte=int(start_timestamp))
         except ValueError:
             pass
     if end_date:
         try:
             end_timestamp = datetime.fromisoformat(end_date).timestamp()
-            q = q & Q(block__time__lte=int(end_timestamp))
+            content_query &= Q(block__time__lte=int(end_timestamp))
         except ValueError:
             pass
 
-    content_objects = models.Content.objects.filter(q).order_by(
-        "-block__time" if order == "desc" else "block__time"
+    content_query = Q()
+    if query:
+        content_query |= Q(context_revision__html__search=query)
+        if "coinbase_scriptsig" not in filters and (
+            "text" in mime_types or not mime_types
+        ):
+            content_query |= Q(coinbase_scriptsig__scriptsig_text__search=query)
+        # if "op_return" not in filters and ("text" in mime_types or not mime_types):
+        #     content_query |= Q(op_return__scriptpubkey_text__search=query)
+        # if "inscription" not in filters:
+        #     content_query |= Q(inscription__text__search=query)
+
+    content_objects = content_objects.filter(content_query).order_by(
+        "block__time" if order == "asc" else "-block__time"
     )
-
-    q = Q()
-    if "inscription" not in object_types:
-        q = q & Q(inscription__isnull=True)
-    if "opreturn" not in object_types:
-        q = q & Q(op_return__isnull=True)
-    if "coinbase" not in object_types:
-        q = q & Q(coinbase_scriptsig__isnull=True)
-    content_objects = content_objects.filter(q)
-
-    if mime_types:
-        q = Q()
-        for mime_type in mime_types:
-            q = q | Q(mime_type=mime_type)
-        content_objects = content_objects.filter(q)
-
     paginator = Paginator(content_objects, 12)
     page = request.GET.get("page")
     page_objects = paginator.get_page(page)
 
-    # block_objects = models.Block.objects.order_by("-time" if order == "desc" else "time")
-    # tx_objects = models.Tx.objects.order_by("-block__time" if order == "desc" else "block__time")
-
-    # def sort_fn(o):
-    #     if hasattr(o, "time"):
-    #         return o.time
-    #     else:
-    #         return o.block.time
-
-    # objects = sorted(list(content_objects) + list(block_objects) + list(tx_objects), key=sort_fn, reverse=True if order == "desc" else False)
-
-    # paginator = Paginator(objects, 24)
-    # page = request.GET.get("page")
-    # page_objects = paginator.get_page(page)
-
     for obj in page_objects:
-        if isinstance(obj, models.Content):
-            if obj.inscription:
-                object_type = "Inscription"
-                filename = obj.inscription.filename
-                text = obj.inscription.text
-                text_json = obj.inscription.json
-                block = obj.inscription.txin.tx.block
-                txid = obj.inscription.txin.tx.txid
-            elif obj.op_return:
-                object_type = "OpReturn"
-                filename = None
-                text = obj.op_return.scriptpubkey_text
-                text_json = None
-                block = obj.op_return.txout.tx.block
-                txid = obj.op_return.txout.tx.txid
-            elif obj.coinbase_scriptsig:
-                object_type = "CoinbaseScriptsig"
-                filename = None
-                text = obj.coinbase_scriptsig.scriptsig_text
-                text_json = None
-                block = obj.coinbase_scriptsig.txin.tx.block
-                txid = obj.coinbase_scriptsig.txin.tx.txid
-            else:
-                return HttpResponseBadRequest()
-            url = f"/context/{obj.context_revision.id}"
-        elif isinstance(obj, models.Block):
-            object_type = "Block"
+        if obj.inscription:
+            object_type = "Inscription"
+            filename = obj.inscription.filename
+            text = obj.inscription.text
+            text_json = obj.inscription.json
+            block = obj.inscription.txin.tx.block
+            txid = obj.inscription.txin.tx.txid
+        elif obj.op_return:
+            object_type = "OpReturn"
             filename = None
-            text = None
+            text = obj.op_return.scriptpubkey_text
             text_json = None
-            block = obj
-            txid = None
-            url = f"/block/{obj.blockheaderhash}"
-        elif isinstance(obj, models.Tx):
-            object_type = "Tx"
+            block = obj.op_return.txout.tx.block
+            txid = obj.op_return.txout.tx.txid
+        elif obj.coinbase_scriptsig:
+            object_type = "CoinbaseScriptsig"
             filename = None
-            text = None
+            text = obj.coinbase_scriptsig.scriptsig_text
             text_json = None
-            block = obj.block
-            txid = obj.txid
-            url = f"/tx/{obj.txid}"
+            block = obj.coinbase_scriptsig.txin.tx.block
+            txid = obj.coinbase_scriptsig.txin.tx.txid
         else:
             return HttpResponseBadRequest()
+        url = f"/context/{obj.context_revision.id}"
 
         block_timestamp = datetime.fromtimestamp(block.time, tz=timezone.utc).strftime(
             "%Y-%m-%d %H:%M:%S %Z"
@@ -156,7 +125,6 @@ def index(request):
         results.append(
             {
                 "object_type": object_type,
-                "content": obj,
                 "mime_type": obj.mime_type.split("/")[0],
                 "mime_subtype": obj.mime_type.split("/")[1],
                 "url": url,

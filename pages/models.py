@@ -65,7 +65,7 @@ class ContextRevision(models.Model):
 
 class Content(models.Model):
     hash = models.BinaryField(unique=True)
-    mime_type = models.CharField()
+    mime_type = models.CharField(db_index=True)
     size = models.IntegerField()
 
     params = models.JSONField()
@@ -163,16 +163,16 @@ class Inscription(models.Model):
     number = models.IntegerField(null=True)
     inscription_id = models.CharField(unique=True)
 
-    content_hash = models.BinaryField(null=True)
+    content_hash = models.BinaryField(null=True, db_index=True)
     content_type = models.CharField()
     content_size = models.IntegerField()
 
     # MIME
-    mime_type = models.CharField()
-    mime_subtype = models.CharField()
+    mime_type = models.CharField(db_index=True)
+    mime_subtype = models.CharField(db_index=True)
     mime_params = models.JSONField(default=dict)
 
-    filename = models.CharField(null=True, unique=True)
+    filename = models.CharField(null=True)
     text = models.TextField(null=True, max_length=1024)
     json = models.JSONField(null=True)
 

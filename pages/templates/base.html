@@ -44,15 +44,29 @@
               type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
           <div class="flex flex-row justify-between w-full absolute text-sm md:text-lg top-full">
-            <div class="cursor-pointer flex" id="filters_toggle">
-              <label for="filters" class="cursor-pointer flex">
-                <i class="fa-solid fa-filter text-2xl my-auto" title="filters"></i>
-              </label>
+            <div class="flex mt-0.5 gap-2" >
+              <div class="flex cursor-pointer" id="filters_toggle">
+                <i class="fa-solid fa-filter text-2xl" title="filters"></i>
+              </div>
+              <div class="flex cursor-pointer" id="calendar_toggle">
+                <i class="fa-regular fa-calendar text-2xl" title="calendar"></i>
+              </div>
+            </div>
+            <div id="calendar" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold">Date Range</span>
+                <button type="button" id="calendar_close" aria-label="close" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
+              </div>
+              <div>
+                <input type="date" name="start_date" value="{{ request.GET.start_date|default_if_none:'' }}"/>
+                <input type="date" name="end_date" value="{{ request.GET.end_date|default_if_none:'' }}"/>
+              </div>
             </div>
             <div id="filters" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
               <div class="flex justify-between items-center mb-2">
                 <span class="font-semibold">Advanced Filters</span>
-                <button type="button" id="filters_close" aria-label="Close filters" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
+                <button type="button" id="filters_help" aria-label="help" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2" title="help">?</button>
+                <button type="button" id="filters_close" aria-label="close" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
               </div>
               <h3 class="font-semibold">Object Type</h3>
               <ul>
@@ -60,10 +74,10 @@
                   <input 
                     {% if 'inscription' in query_object_types %}checked{% endif %}
                     type="checkbox"
-                    name="object_type"
+                    name="filter"
                     value="inscription" 
-                    id="object_type_inscription">
-                  <label for="object_type_inscription" class="font-normal pr-2">
+                    id="filter_inscription">
+                  <label for="filter_inscription" class="font-normal pr-2">
                     Inscription
                   </label>
                 </li>
@@ -71,10 +85,10 @@
                   <input 
                     {% if 'coinbase' in query_object_types %}checked{% endif %}
                     type="checkbox"
-                    name="object_type"
-                    value="coinbase" 
-                    id="object_type_coinbase">
-                  <label for="object_type_coinbase">
+                    name="filter"
+                    value="coinbase_scriptsig" 
+                    id="filter_coinbase">
+                  <label for="filter_coinbase">
                     Coinbase
                   </label>
                 </li>
@@ -82,10 +96,10 @@
                   <input 
                     {% if 'op_return' in query_object_types %}checked{% endif %}
                     type="checkbox"
-                    name="object_type"
-                    value="opreturn" 
-                    id="object_type_opreturn">
-                  <label for="object_type_opreturn">
+                    name="filter"
+                    value="op_return" 
+                    id="filter_opreturn">
+                  <label for="filter_opreturn">
                     OpReturn
                   </label>
                 </li>
@@ -93,13 +107,28 @@
               <div id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML">
                 
               </div>
-              <div>
-                <h3 class="font-semibold">Date Range</h3>
-                <div>
-                  <input type="date" name="start_date" value="{{ request.GET.start_date|default_if_none:'' }}"/>
-                  <input type="date" name="end_date" value="{{ request.GET.end_date|default_if_none:'' }}"/>
-                </div>
-              </div>
+            </div>
+            <div class="grow flex items-center justify-center text-xl">
+              <label for="mime_type_text" title="text">
+                <input class="hidden peer" type="checkbox" name="mime_type" value="text" id="mime_type_text">
+                <i class="fa-solid fa-font cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+              </label>
+              <label for="mime_type_image" title="image">
+                <input class="hidden peer" type="checkbox" name="mime_type" value="image" id="mime_type_image">
+                <i class="fa-regular fa-image cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+              </label>
+              <label for="mime_type_audio" title="audio">
+                <input class="hidden peer" type="checkbox" name="mime_type" value="audio" id="mime_type_audio">
+                <i class="fa-regular fa-file-audio cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+              </label>
+              <label for="mime_type_video" title="video">
+                <input class="hidden peer" type="checkbox" name="mime_type" value="video" id="mime_type_video">
+                <i class="fa-regular fa-file-video cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+              </label>
+              <label for="mime_type_other" title="other">
+                <input class="hidden peer" type="checkbox" name="mime_type" value="other" id="mime_type_other">
+                <i class="fa-solid fa-question cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+              </label>
             </div>
             <div class="flex flex-row gap-1">
               <div class="my-0.5 hidden">
@@ -111,11 +140,13 @@
                   <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>relevance</option>
                 </select>
               </div>
-              {% if request.GET.order == "asc" %}
-              <img class="cursor-pointer transform mt-0.5 triangle-svg-filter" src="{% static 'images/triangle.png' %}" title="sort" id="order_toggle"/>
-              {% else %}
-              <img class="cursor-pointer transform mt-0.5 rotate-180 triangle-svg-filter" src="{% static 'images/triangle.png' %}" title="sort" id="order_toggle"/>
-              {% endif %}
+              <div class="py-0.5">
+                {% if request.GET.order == "asc" %}
+                <img class="cursor-pointer transform mt-0 triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
+                {% else %}
+                <img class="cursor-pointer transform mt-0 rotate-180 triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
+                {% endif %}
+              </div>
               <div class="hidden">
                 <label for="order_select">
                   Order
@@ -140,7 +171,7 @@
         </div>
         <div title="Toggle dark mode" id="darkmode_toggle"
           class="cursor-pointer h-full w-16 flex justify-center">
-           <img class="w-12 h-12 triangle-svg-filter" src="{% static 'images/eclipse1.svg' %}"/>
+           <img class="w-15 h-15 triangle-svg-filter" src="{% static 'images/eclipse1.svg' %}"/>
         </div>
       </div>
     </form>
