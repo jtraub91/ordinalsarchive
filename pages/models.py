@@ -75,8 +75,10 @@ class Content(models.Model):
     )
     op_return = models.ForeignKey("OpReturn", on_delete=models.CASCADE, null=True)
     inscription = models.ForeignKey("Inscription", on_delete=models.CASCADE, null=True)
+    text = models.TextField(default="", db_index=True)
 
     block = models.ForeignKey(Block, on_delete=models.CASCADE)
+    block_time = models.BigIntegerField(null=True, db_index=True)
 
     context_revision = models.ForeignKey(
         ContextRevision, on_delete=models.CASCADE, null=True
