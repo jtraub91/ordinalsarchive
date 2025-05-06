@@ -76,7 +76,7 @@ def index(request):
     content_query = Q()
     if query:
         # content_query |= Q(context_revision__html__search=query)
-        content_query &= Q(text__search=query)
+        content_query &= Q(text__search=query) | Q(text__icontains=query)
         # if "coinbase_scriptsig" not in filters and (
         #     "text" in mime_types or not mime_types
         # ):
