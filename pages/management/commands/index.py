@@ -181,7 +181,9 @@ class Command(BaseCommand):
                                 params={"charset": "utf-8"},
                                 size=len(coinbase_scriptsig_row.scriptsig_text),
                                 coinbase_scriptsig=coinbase_scriptsig_row,
+                                text=coinbase_scriptsig_row.scriptsig_text,
                                 block=block_row,
+                                block_time=block_row.time,
                             )
                             content_row.save()
                             log.info(f"{content_row} saved to db.")
@@ -220,7 +222,9 @@ class Command(BaseCommand):
                                 params={"charset": "utf-8"},
                                 size=len(opreturn_row.scriptpubkey_text),
                                 op_return=opreturn_row,
+                                text=opreturn_row.scriptpubkey_text,
                                 block=block_row,
+                                block_time=block_row.time,
                             )
                             content_row.save()
                             log.info(f"{content_row} saved to db.")
@@ -336,7 +340,13 @@ class Command(BaseCommand):
                                     size=content_size,
                                     params=mime_params,
                                     inscription=inscription_row,
+                                    text=(
+                                        inscription_row.text
+                                        if inscription_row.text
+                                        else ""
+                                    ),
                                     block=block_row,
+                                    block_time=block_row.time,
                                 )
                                 content_row.save()
                                 log.info(f"{content_row} saved to db.")
