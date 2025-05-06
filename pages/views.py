@@ -75,18 +75,19 @@ def index(request):
 
     content_query = Q()
     if query:
-        content_query |= Q(context_revision__html__search=query)
-        if "coinbase_scriptsig" not in filters and (
-            "text" in mime_types or not mime_types
-        ):
-            content_query |= Q(coinbase_scriptsig__scriptsig_text__search=query)
+        # content_query |= Q(context_revision__html__search=query)
+        content_query &= Q(text__search=query)
+        # if "coinbase_scriptsig" not in filters and (
+        #     "text" in mime_types or not mime_types
+        # ):
+        #     content_query |= Q(coinbase_scriptsig__scriptsig_text__search=query)
         # if "op_return" not in filters and ("text" in mime_types or not mime_types):
         #     content_query |= Q(op_return__scriptpubkey_text__search=query)
         # if "inscription" not in filters:
         #     content_query |= Q(inscription__text__search=query)
 
     content_objects = content_objects.filter(content_query).order_by(
-        "block__time" if order == "asc" else "-block__time"
+        "block_time" if order == "asc" else "-block_time"
     )
     paginator = Paginator(content_objects, 12)
     page = request.GET.get("page")

@@ -14,10 +14,13 @@ class Command(BaseCommand):
         for i, content in enumerate(Content.objects.all()):
             content.block_time = content.block.time
             if content.inscription is not None:
-                content.text = content.inscription.text
+                text = content.inscription.text
             elif content.coinbase_scriptsig is not None:
-                content.text = content.coinbase_scriptsig.scriptsig_text
+                text = content.coinbase_scriptsig.scriptsig_text
             elif content.op_return is not None:
-                content.text = content.op_return.scriptpubkey_text
+                text = content.op_return.scriptpubkey_text
+            if text is None:
+                text = ""
+            content.text = text
             content.save()
             log.info(f"{content} normalized. {i+1}/{count} ({(i+1)/count*100:.2f}%)")
