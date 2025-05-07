@@ -476,6 +476,9 @@
   .min-w-\[220px\] {
     min-width: 220px;
   }
+  .min-w-sm {
+    min-width: var(--container-sm);
+  }
   .min-w-xs {
     min-width: var(--container-xs);
   }

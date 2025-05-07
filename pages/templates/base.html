@@ -23,13 +23,13 @@
       })();
     </script>
   </head>
-  <body class="bg-[#fff3cd] dark:bg-black dark:text-white transition-colors">
+  <body class="bg-[#fff3cd] dark:bg-black dark:text-white transition-colors min-w-xs">
     <canvas id="bg-canvas" class="hidden dark:block fixed top-0 left-0 -z-10 pointer-events-none"></canvas>
     <form action="/" method="get" hx-get="/" hx-target="#content" hx-push-url="true" hx-trigger="change delay:300ms, input delay:300ms">
       <div class="flex h-16">
         <div>
           <a href="/">
-            <img class="inline-block md:hidden h-full"
+            <img class="inline-block md:hidden w-15 h-15"
               src="{% static 'images/logo.svg' %}" alt="Ordinals Archive Logo"/>
             <h1 class="text-6xl font-anton hidden md:block">Archive</h1>
           </a>

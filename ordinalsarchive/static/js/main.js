@@ -76,7 +76,12 @@ if (document.documentElement.classList.contains('dark')) {
 }
 
 // Redraw on resize
-window.addEventListener('resize', () => resizeAndDraw(canvas));
+window.addEventListener('resize', function() { 
+  if (!canvas.offsetWidth || !canvas.offsetHeight) {
+    return;
+  }
+  resizeAndDraw(canvas); 
+});
 
 // Filters dropdown close button logic
 const filtersCloseBtn = document.getElementById('filters_close');
