@@ -1,7 +1,3 @@
-static
-logs
-media
-
 __pycache__
 venv
 node_modules
