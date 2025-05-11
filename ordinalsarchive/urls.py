@@ -17,8 +17,6 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
 
 from pages import views
 
@@ -27,10 +25,10 @@ urlpatterns = [
     path("", views.index),
     path("block/<str:block_identifier>", views.block),
     # path("tx/<str:txid>", views.tx),
-    path("content/<str:inscription_id>", views.content),
     path("context/<int:context_id>", views.context),
     path("context/revision/<int:context_id>", views.context_revision),
     path("content_types", views.content_types),
     path("lit", views.lit),
+    path("media/<str:filename>", views.media),
     path("admin/", admin.site.urls),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]

@@ -4,16 +4,18 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 import bits.crypto
 import bits.bips.bip39
 import cbor2
 import qrcode
 from bits.blockchain import Block
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, FileResponse
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 from glclient import Credentials, Scheduler, clnpb
 
 
@@ -75,16 +77,7 @@ def index(request):
 
     content_query = Q()
     if query:
-        # content_query |= Q(context_revision__html__search=query)
         content_query &= Q(text__search=query) | Q(text__icontains=query)
-        # if "coinbase_scriptsig" not in filters and (
-        #     "text" in mime_types or not mime_types
-        # ):
-        #     content_query |= Q(coinbase_scriptsig__scriptsig_text__search=query)
-        # if "op_return" not in filters and ("text" in mime_types or not mime_types):
-        #     content_query |= Q(op_return__scriptpubkey_text__search=query)
-        # if "inscription" not in filters:
-        #     content_query |= Q(inscription__text__search=query)
 
     content_objects = content_objects.filter(content_query).order_by(
         "block_time" if order == "asc" else "-block_time"
@@ -354,5 +347,6 @@ def lit(request):
     )
 
 
-def content(request, inscription_id: str):
-    return redirect(f"https://ordinals.com/{inscription_id}")
+def media(request, filename: str):
+    filepath = Path(settings.MEDIA_ROOT) / filename
+    return FileResponse(filepath.open("rb"))
