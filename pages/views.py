@@ -17,7 +17,8 @@ from bits.wallet.hd import derive_from_path
 from django.http import JsonResponse, HttpResponseBadRequest, FileResponse
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, F
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.shortcuts import render, get_object_or_404
 from glclient import Credentials, Scheduler, clnpb
 
@@ -80,13 +81,21 @@ def index(request):
         except ValueError:
             pass
 
-    content_query = Q()
     if query:
-        content_query &= Q(text__search=query) | Q(text__icontains=query)
-
-    content_objects = content_objects.filter(content_query).order_by(
-        "block_time" if order == "asc" else "-block_time"
-    )
+        search_query = SearchQuery(query, config="english")
+        content_objects = (
+            content_objects.filter(search_vector=search_query)
+            .annotate(rank=SearchRank(F("search_vector"), search_query))
+            .order_by(
+                "-rank",  # Sort by relevance first
+                "block_time" if order == "asc" else "-block_time",  # Then by time
+            )
+        )
+    else:
+        # If no query, just order by time
+        content_objects = content_objects.order_by(
+            "block_time" if order == "asc" else "-block_time"
+        )
     paginator = Paginator(content_objects, 12)
     page = request.GET.get("page")
     page_objects = paginator.get_page(page)

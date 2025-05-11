@@ -1,5 +1,7 @@
 from bits import compact_size_uint
 from django.contrib.auth.models import User  # pylint: disable=imported-auth-user
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 
 
@@ -76,6 +78,7 @@ class Content(models.Model):
     op_return = models.ForeignKey("OpReturn", on_delete=models.CASCADE, null=True)
     inscription = models.ForeignKey("Inscription", on_delete=models.CASCADE, null=True)
     text = models.TextField(default="")
+    search_vector = SearchVectorField(null=True)
 
     block = models.ForeignKey(Block, on_delete=models.CASCADE)
     block_time = models.BigIntegerField(default=0, db_index=True)
@@ -84,11 +87,14 @@ class Content(models.Model):
         ContextRevision, on_delete=models.CASCADE, null=True
     )
 
-    def save(self):
+    class Meta:
+        indexes = [GinIndex(fields=["search_vector"])]
+
+    def save(self, *args, **kwargs):
         if self.context_revision_id is None:
             self.context_revision = ContextRevision()
             self.context_revision.save()
-        super().save()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         # pylint: disable=no-member
