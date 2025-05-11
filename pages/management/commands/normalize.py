@@ -10,8 +10,12 @@ class Command(BaseCommand):
     help = "Normalize content"
 
     def handle(self, *args, **options):
+        log.info("counting content objects...")
         count = Content.objects.count()
-        for i, content in enumerate(Content.objects.all()):
+        log.info(f"found {count} Content objects.")
+        contents = Content.objects.order_by("id").all()
+        for i, content in enumerate(contents.iterator(), start=1):
+            log.info(f"normalizing {content} ...")
             content.block_time = content.block.time
             if content.inscription is not None:
                 text = content.inscription.text
@@ -23,4 +27,4 @@ class Command(BaseCommand):
                 text = ""
             content.text = text
             content.save()
-            log.info(f"{content} normalized. {i+1}/{count} ({(i+1)/count*100:.2f}%)")
+            log.info(f"{content} normalized. {i}/{count} ({i/count*100:.2f}%)")
