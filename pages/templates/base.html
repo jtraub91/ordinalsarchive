@@ -30,7 +30,7 @@
         <div>
           <a href="/">
             <img class="inline-block md:hidden w-15 h-15"
-              src="{% static 'images/logo.svg' %}" alt="Ordinals Archive Logo"/>
+              src="{% static 'images/block.svg' %}" alt="Ordinals Archive Logo"/>
             <h1 class="text-6xl font-anton hidden md:block">Archive</h1>
           </a>
         </div>
@@ -44,12 +44,12 @@
               type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
           <div class="flex flex-row justify-between w-full absolute text-sm md:text-lg top-full">
-            <div class="flex mt-0.5 gap-2" >
+            <div class="flex h-9 w-9" >
               <div class="flex cursor-pointer" id="filters_toggle">
-                <i class="fa-solid fa-filter text-2xl" title="filters"></i>
+                <i class="fa-solid fa-filter m-auto" title="filters"></i>
               </div>
-              <div class="flex cursor-pointer" id="calendar_toggle">
-                <i class="fa-regular fa-calendar text-2xl" title="calendar"></i>
+              <div class="hidden flex cursor-pointer" id="calendar_toggle">
+                <i class="fa-solid fa-magnifying-glass m-auto" title="calendar"></i>
               </div>
             </div>
             <div id="calendar" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
@@ -58,8 +58,12 @@
                 <button type="button" id="calendar_close" aria-label="close" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
               </div>
               <div>
-                <input type="date" name="start_date" value="{{ request.GET.start_date|default_if_none:'' }}"/>
-                <input type="date" name="end_date" value="{{ request.GET.end_date|default_if_none:'' }}"/>
+                <input type="date" name="start_date" 
+                  min="2009-01-03"
+                  value="{{ request.GET.start_date|default_if_none:'' }}"/>
+                <input type="date" name="end_date" 
+                  min="2009-01-03"
+                  value="{{ request.GET.end_date|default_if_none:'' }}"/>
               </div>
             </div>
             <div id="filters" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
@@ -69,7 +73,7 @@
                 <button type="button" id="filters_close" aria-label="close" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
               </div>
               <h3 class="font-semibold">Object Type</h3>
-              <ul>
+              <ul class="flex flex-col">
                 <li>
                   <input 
                     {% if 'inscription' in query_object_types %}checked{% endif %}
@@ -79,6 +83,12 @@
                     id="filter_inscription">
                   <label for="filter_inscription" class="font-normal pr-2">
                     Inscription
+                  </label>
+                </li>
+                <li class="ml-2">
+                  <input type="checkbox" name="filter" value="brc-20" id="filter_brc20">
+                  <label for="filter_brc20" class="font-normal pr-2">
+                    BRC-20
                   </label>
                 </li>
                 <li>
@@ -104,8 +114,7 @@
                   </label>
                 </li>
               </ul>
-              <div id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML">
-                
+              <div class="hidden" id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML">
               </div>
             </div>
             <div class="grow flex items-center justify-center text-xl">
@@ -140,11 +149,11 @@
                   <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>relevance</option>
                 </select>
               </div>
-              <div class="py-0.5">
+              <div class="h-9 w-9 flex">
                 {% if request.GET.order == "asc" %}
-                <img class="cursor-pointer transform mt-0 triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
+                <img class="m-auto cursor-pointer transform triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
                 {% else %}
-                <img class="cursor-pointer transform mt-0 rotate-180 triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
+                <img class="m-auto cursor-pointer transform rotate-180 triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
                 {% endif %}
               </div>
               <div class="hidden">
@@ -175,7 +184,7 @@
         </div>
       </div>
     </form>
-    <div class="py-4 my-4 mx-4">
+    <div class="py-4 my-12">
       <div class="w-full flex flex-col justify-center items-center" id="content">
         {% block content %}
         {% include "components/results.html" with results=results%}

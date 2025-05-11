@@ -3,7 +3,7 @@
 {% block content %}
 <div class="w-full mt-4 flex flex-col min-w-xs max-w-xl">
   <div class="m-auto border border-zinc-900 dark:border-lime-500 max-w-full">
-    <div class="text-lg text-black dark:text-white font-mono  break-all bg-gray-50 dark:bg-zinc-900" id="content-text">
+    <div class="text-lg text-black dark:text-white font-mono  break-words bg-gray-50 dark:bg-zinc-900" id="content-text">
       {% if object_type|lower == "coinbasescriptsig" %}
       <div class="p-4">
         {{ content.coinbase_scriptsig.scriptsig_text }}
@@ -187,6 +187,7 @@
     metadataToggle.classList.toggle('rotate-180');
   });
 
+  let lit_bit_toggle = false;
   let litData = null;
 
   (function() {
@@ -203,7 +204,7 @@
       tipModal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
       if (!litData) {
-        fetch('/lit', {
+        fetch('/bit', {
           method: 'GET',
           headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -212,11 +213,11 @@
         }).then(response => response.json())
           .then(data => {
             litData = data;
-            invoiceEl.textContent = data.bolt11;
+            invoiceEl.textContent = data.addr;
             qrEl.src = data.qr_data_uri;
           })
           .catch(error => {
-            console.error('Error fetching lightning invoice:', error);
+            console.error('Error fetching address:', error);
           });
       }
     });
@@ -239,8 +240,11 @@
   }
   if (invoiceEl && feedbackEl) {
     invoiceEl.addEventListener('click', () => {
+      if (!litData) {
+        return;
+      }
       navigator.clipboard.writeText(invoiceEl.textContent).then(() => {
-        feedbackEl.textContent = 'Invoice copied!';
+        feedbackEl.textContent = 'Address copied!';
         setTimeout(() => { feedbackEl.textContent = ''; }, 1200);
       });
     });

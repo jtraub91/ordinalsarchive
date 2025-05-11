@@ -6,11 +6,14 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import bits.crypto
 import bits.bips.bip39
+import bits.crypto
 import cbor2
 import qrcode
+from bits import to_bitcoin_address
 from bits.blockchain import Block
+from bits.bips.bip32 import deserialized_extended_key
+from bits.wallet.hd import derive_from_path
 from django.http import JsonResponse, HttpResponseBadRequest, FileResponse
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -50,6 +53,8 @@ def index(request):
         if filter_ in ["inscription", "op_return", "coinbase_scriptsig"]:
             kwarg = {f"{filter_}__isnull": True}
             content_query &= Q(**kwarg)
+        elif filter_ == "brc-20":
+            content_query &= ~Q(inscription__json__p="brc-20")
         else:
             # mime_type
             content_query &= ~Q(mime_type=filter_)
@@ -320,6 +325,21 @@ def context(request, context_id: int):
                 (str(context_row.id) + context_row.html).encode("utf-8")
             ).hex(),
         },
+    )
+
+
+def bit(request):
+    new_xpub = derive_from_path("M/0/0", settings.WALLET_XPUB.encode("utf-8"))
+    new_pubkey = deserialized_extended_key(new_xpub, return_dict=True)["key"]
+    new_addr = to_bitcoin_address(
+        bits.crypto.hash160(bytes.fromhex(new_pubkey))
+    ).decode("utf-8")
+    barray = io.BytesIO()
+    qr = qrcode.make(f"bitcoin:{new_addr}")
+    qr.save(barray, format="png")
+    qb = base64.b64encode(barray.getvalue()).decode("utf-8")
+    return JsonResponse(
+        {"addr": new_addr, "qr_data_uri": f"data:image/png;base64,{qb}"}
     )
 
 
