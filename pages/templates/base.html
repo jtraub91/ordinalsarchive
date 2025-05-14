@@ -45,14 +45,17 @@
           </div>
           <div class="flex flex-row justify-between w-full absolute text-sm md:text-lg top-full">
             <div class="flex" >
-              <div class="hidden flex cursor-pointer" id="filters_toggle">
+              <div class="flex cursor-pointer" id="filters_toggle">
                 <i class="fa-solid fa-filter text-2xl" title="filters"></i>
               </div>
               <div class="flex cursor-pointer hidden">
                 <i class="fa-solid fa-magnifying-glass m-auto" title="calendar"></i>
               </div>
-              <div id="filters" class="hidden absolute top-8 bg-white/80 dark:bg-zinc-800 border dark:border-indigo-500 shadow-lg p-4 z-50 min-w-[220px] max-w-full">
-                <div>
+              <div id="filters" class="hidden absolute border-2 border-black dark:border-indigo-500 top-8 bg-white dark:bg-black shadow-lg p-5 z-50">
+                <div class="absolute top-1 right-1 flex cursor-pointer" id="filters_close">
+                  <i class="fa-solid fa-xmark"></i>
+                </div>
+                <div class="hidden">
                   <input type="date" name="start_date" 
                     min="2009-01-03"
                     value="{{ request.GET.start_date|default_if_none:'' }}"/>
@@ -111,24 +114,24 @@
               <label class="ml-auto"
                 for="mime_type_text" title="text">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="text" id="mime_type_text">
-                <i class="fa-solid fa-font p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-solid fa-font sm:w-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_image" title="image">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="image" id="mime_type_image">
-                <i class="fa-regular fa-image p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-regular fa-image sm:w-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_audio" title="audio">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="audio" id="mime_type_audio">
-                <i class="fa-regular fa-file-audio p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-regular fa-file-audio sm:w-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_video" title="video">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="video" id="mime_type_video">
-                <i class="fa-regular fa-file-video p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-regular fa-file-video sm:w-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label class="mr-auto"
                 for="mime_type_other" title="other">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="other" id="mime_type_other">
-                <i class="fa-solid fa-question p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-solid fa-question sm:w-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
             </div>
             <div class="flex flex-row">

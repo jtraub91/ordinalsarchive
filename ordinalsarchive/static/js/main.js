@@ -30,6 +30,10 @@ document.addEventListener('click', function(event) {
   }
 });
 
+document.getElementById('filters_close').addEventListener('click', function() {
+  document.getElementById('filters').classList.add('hidden');
+});
+
 const canvas = document.getElementById('bg-canvas');
 
 function resizeCanvas(canvas) {
