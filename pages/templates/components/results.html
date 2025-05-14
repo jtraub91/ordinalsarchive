@@ -4,7 +4,10 @@
     {% for result in results %}
     <div class="w-60 h-60 border-2 border-gray-700 dark:border-lime-500 bg-[#fdfdfb] dark:bg-zinc-900 hover:shadow-black shadow-sm flex items-center justify-center"
       {% if forloop.last %}
-      hx-trigger="revealed" hx-swap="beforeend" hx-target="#content" hx-get="{{ next_page_url }}"
+      hx-trigger="revealed" hx-swap="beforeend" hx-target="#content" 
+      {% if next_page_url %}
+      hx-get="{{ next_page_url }}"
+      {% endif %}
       {% endif %}>
       <a href="{{ result.url }}" class="w-full h-full overflow-hidden">
         {% if result.object_type == 'Inscription' %}

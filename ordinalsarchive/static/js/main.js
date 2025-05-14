@@ -19,14 +19,19 @@ document.querySelector('#order_toggle').addEventListener('click', function() {
   console.log("t")
 });
 
-document.querySelector('#filters_toggle').addEventListener('click', function() {
-  let toggle = document.getElementById('filters');
-  toggle.classList.toggle('hidden');
+document.querySelector('#filters_toggle').addEventListener('click', function(event) {
+  event.stopPropagation();
+  document.getElementById('filters').classList.toggle('hidden');
 });
 
-document.querySelector('#calendar_toggle').addEventListener('click', function() {
-  let toggle = document.getElementById('calendar');
-  toggle.classList.toggle('hidden');
+document.addEventListener('click', function(event) {
+  if (!document.getElementById('filters').contains(event.target) && !document.getElementById('filters').classList.contains('hidden')) {
+    document.getElementById('filters').classList.toggle('hidden');
+  }
+});
+
+document.getElementById('filters_close').addEventListener('click', function() {
+  document.getElementById('filters').classList.add('hidden');
 });
 
 const canvas = document.getElementById('bg-canvas');
@@ -82,22 +87,6 @@ window.addEventListener('resize', function() {
   }
   resizeAndDraw(canvas); 
 });
-
-// Filters dropdown close button logic
-const filtersCloseBtn = document.getElementById('filters_close');
-if (filtersCloseBtn) {
-  filtersCloseBtn.addEventListener('click', function() {
-    document.getElementById('filters').classList.add('hidden');
-  });
-}
-
-// Calendar dropdown close button logic
-const calendarCloseBtn = document.getElementById('calendar_close');
-if (calendarCloseBtn) {
-  calendarCloseBtn.addEventListener('click', function() {
-    document.getElementById('calendar').classList.add('hidden');
-  });
-}
 
 /* Context Editor */
 var context_editor = document.getElementById('context_editor');
