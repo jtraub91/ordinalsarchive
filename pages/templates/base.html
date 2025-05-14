@@ -48,73 +48,63 @@
               <div class="hidden flex cursor-pointer" id="filters_toggle">
                 <i class="fa-solid fa-filter text-2xl" title="filters"></i>
               </div>
-              <div class="flex cursor-pointer" id="calendar_toggle">
-                <i class="fa-solid fa-magnifying-glass text-2xl" title="calendar"></i>
+              <div class="flex cursor-pointer hidden">
+                <i class="fa-solid fa-magnifying-glass m-auto" title="calendar"></i>
               </div>
-            </div>
-            <div id="calendar" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-semibold">Date Range</span>
-                <button type="button" id="calendar_close" aria-label="close" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
-              </div>
-              <div>
-                <input type="date" name="start_date" 
-                  min="2009-01-03"
-                  value="{{ request.GET.start_date|default_if_none:'' }}"/>
-                <input type="date" name="end_date" 
-                  min="2009-01-03"
-                  value="{{ request.GET.end_date|default_if_none:'' }}"/>
-              </div>
-            </div>
-            <div id="filters" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-semibold">Advanced Filters</span>
-                <button type="button" id="filters_help" aria-label="help" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2" title="help">?</button>
-                <button type="button" id="filters_close" aria-label="close" class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white text-xl px-2">&times;</button>
-              </div>
-              <h3 class="font-semibold">Object Type</h3>
-              <ul class="flex flex-col">
-                <li>
-                  <input 
-                    {% if 'inscription' in query_object_types %}checked{% endif %}
-                    type="checkbox"
-                    name="filter"
-                    value="inscription" 
-                    id="filter_inscription">
-                  <label for="filter_inscription" class="font-normal pr-2">
-                    Inscription
-                  </label>
-                </li>
-                <li class="ml-2">
-                  <input type="checkbox" name="filter" value="brc-20" id="filter_brc20">
-                  <label for="filter_brc20" class="font-normal pr-2">
-                    BRC-20
-                  </label>
-                </li>
-                <li>
-                  <input 
-                    {% if 'coinbase' in query_object_types %}checked{% endif %}
-                    type="checkbox"
-                    name="filter"
-                    value="coinbase_scriptsig" 
-                    id="filter_coinbase">
-                  <label for="filter_coinbase">
-                    Coinbase
-                  </label>
-                </li>
-                <li>
-                  <input 
-                    {% if 'op_return' in query_object_types %}checked{% endif %}
-                    type="checkbox"
-                    name="filter"
-                    value="op_return" 
-                    id="filter_opreturn">
-                  <label for="filter_opreturn">
-                    OpReturn
-                  </label>
-                </li>
-              </ul>
-              <div class="hidden" id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML">
+              <div id="filters" class="hidden absolute top-8 bg-white/80 dark:bg-zinc-800 border dark:border-indigo-500 shadow-lg p-4 z-50 min-w-[220px] max-w-full">
+                <div>
+                  <input type="date" name="start_date" 
+                    min="2009-01-03"
+                    value="{{ request.GET.start_date|default_if_none:'' }}"/>
+                  <input type="date" name="end_date" 
+                    min="2009-01-03"
+                    value="{{ request.GET.end_date|default_if_none:'' }}"/>
+                </div>
+                <ul class="flex flex-col">
+                  <li>
+                    <input class="hidden peer"
+                      {% if 'inscription' in query_object_types %}checked{% endif %}
+                      type="checkbox"
+                      name="filter"
+                      value="inscription" 
+                      id="filter_inscription">
+                    <label for="filter_inscription" class="font-normal cursor-pointer peer-checked:line-through pr-2">
+                      Inscription
+                    </label>
+                  </li>
+                  <li>
+                    <input class="hidden peer"
+                      {% if 'brc-20' in query_object_types %}checked{% endif %}
+                      type="checkbox"
+                      name="filter" value="brc-20" id="filter_brc20">
+                    <label for="filter_brc20" class="font-normal cursor-pointer peer-checked:line-through pr-2">
+                      BRC-20
+                    </label>
+                  </li>
+                  <li>
+                    <input class="hidden peer"
+                      {% if 'coinbase' in query_object_types %}checked{% endif %}
+                      type="checkbox"
+                      name="filter"
+                      value="coinbase_scriptsig" 
+                      id="filter_coinbase">
+                    <label for="filter_coinbase" class="font-normal cursor-pointer peer-checked:line-through pr-2">
+                      Coinbase
+                    </label>
+                  </li>
+                  <li>
+                    <input class="hidden peer"
+                      {% if 'op_return' in query_object_types %}checked{% endif %}
+                      type="checkbox"
+                      name="filter"
+                      value="op_return" 
+                      id="filter_opreturn">
+                    <label for="filter_opreturn" class="font-normal cursor-pointer peer-checked:line-through pr-2">
+                      OpReturn
+                    </label>
+                  </li>
+                </ul>
+                <!-- <div class="hidden" id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML"></div> -->
               </div>
             </div>
             <div class="grow flex text-xl">
