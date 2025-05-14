@@ -29,27 +29,27 @@
       <div class="flex h-16">
         <div>
           <a href="/">
-            <img class="inline-block md:hidden w-15 h-15"
+            <img class="inline-block md:hidden w-16 h-16 min-w-[64px] min-h-[64px]"
               src="{% static 'images/block.svg' %}" alt="Ordinals Archive Logo"/>
             <h1 class="text-6xl font-anton hidden md:block">Archive</h1>
           </a>
         </div>
-        <div class="grow ml-2 h-full relative">
+        <div class="grow h-full relative">
           <div class="text-xl h-full">
             <input 
               value="{{ request.GET.q|default_if_none:'' }}"
               name="q"
               id="q"
-              class="w-full h-full p-2 border-b-2 text-lg placeholder:text-sm md:placeholder:text-lg tracking-tighter md:tracking-normal md:text-lg lg:text-2xl border-black dark:border-pink-500 placeholder:text-center placeholder:text-gray-700 dark:placeholder:text-gray-300 dark:placeholder:text-center"
+              class="w-full h-full p-2 border-b-2 text-lg placeholder:text-sm md:placeholder:text-lg placeholder:break-words placeholder:whitespace-normal tracking-tighter md:tracking-normal md:text-lg lg:text-2xl border-black dark:border-pink-500 placeholder:text-center placeholder:text-gray-700 dark:placeholder:text-gray-300 dark:placeholder:text-center"
               type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
           <div class="flex flex-row justify-between w-full absolute text-sm md:text-lg top-full">
-            <div class="flex h-9 w-9" >
-              <div class="flex cursor-pointer" id="filters_toggle">
-                <i class="fa-solid fa-filter m-auto" title="filters"></i>
+            <div class="flex" >
+              <div class="hidden flex cursor-pointer" id="filters_toggle">
+                <i class="fa-solid fa-filter text-2xl" title="filters"></i>
               </div>
-              <div class="hidden flex cursor-pointer" id="calendar_toggle">
-                <i class="fa-solid fa-magnifying-glass m-auto" title="calendar"></i>
+              <div class="flex cursor-pointer" id="calendar_toggle">
+                <i class="fa-solid fa-magnifying-glass text-2xl" title="calendar"></i>
               </div>
             </div>
             <div id="calendar" class="hidden absolute bg-white/80 dark:bg-zinc-800/80 border border-gray-300 dark:border-zinc-700 shadow-lg p-4 z-50 min-w-[220px]">
@@ -117,29 +117,31 @@
               <div class="hidden" id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML">
               </div>
             </div>
-            <div class="grow flex items-center justify-center text-xl">
-              <label for="mime_type_text" title="text">
+            <div class="grow flex text-xl">
+              <label class="ml-auto"
+                for="mime_type_text" title="text">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="text" id="mime_type_text">
-                <i class="fa-solid fa-font cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-solid fa-font p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_image" title="image">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="image" id="mime_type_image">
-                <i class="fa-regular fa-image cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-regular fa-image p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_audio" title="audio">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="audio" id="mime_type_audio">
-                <i class="fa-regular fa-file-audio cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-regular fa-file-audio p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_video" title="video">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="video" id="mime_type_video">
-                <i class="fa-regular fa-file-video cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-regular fa-file-video p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
-              <label for="mime_type_other" title="other">
+              <label class="mr-auto"
+                for="mime_type_other" title="other">
                 <input class="hidden peer" type="checkbox" name="mime_type" value="other" id="mime_type_other">
-                <i class="fa-solid fa-question cursor-pointer h-9 py-2 w-9 text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
+                <i class="fa-solid fa-question p-1 md:p-2 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
             </div>
-            <div class="flex flex-row gap-1">
+            <div class="flex flex-row">
               <div class="my-0.5 hidden">
                 <label class="hidden" for="sort_select">
                   Sort
@@ -151,9 +153,9 @@
               </div>
               <div class="h-9 w-9 flex">
                 {% if request.GET.order == "asc" %}
-                <img class="m-auto cursor-pointer transform triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
+                <img class="mt-0 mr-0 ml-auto cursor-pointer transform triangle-svg-filter w-6 h-6" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
                 {% else %}
-                <img class="m-auto cursor-pointer transform rotate-180 triangle-svg-filter" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
+                <img class="mt-0 mr-0 ml-auto cursor-pointer transform rotate-180 triangle-svg-filter w-6 h-6" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
                 {% endif %}
               </div>
               <div class="hidden">
@@ -180,7 +182,7 @@
         </div>
         <div title="Toggle dark mode" id="darkmode_toggle"
           class="cursor-pointer h-full w-16 flex justify-center">
-           <img class="w-15 h-15 triangle-svg-filter" src="{% static 'images/eclipse1.svg' %}"/>
+           <img class=" triangle-svg-filter" src="{% static 'images/eclipse1.svg' %}"/>
         </div>
       </div>
     </form>

@@ -2,14 +2,14 @@
 {% load static %}
 {% block content %}
 <div class="w-full mt-4 flex flex-col min-w-xs max-w-xl">
-  <div class="m-auto border border-zinc-900 dark:border-lime-500 max-w-full">
+  <div class="border border-zinc-900 dark:border-lime-500 max-w-full">
     <div class="text-lg text-black dark:text-white font-mono  break-words bg-gray-50 dark:bg-zinc-900" id="content-text">
       {% if object_type|lower == "coinbasescriptsig" %}
-      <div class="p-4">
+      <div class="w-full text-center">
         {{ content.coinbase_scriptsig.scriptsig_text }}
       </div>
       {% elif object_type|lower == "opreturn" %}
-      <div class="p-4">
+      <div class="w-full text-center">
         {{ content.op_return.scriptpubkey_text }}
       </div>
       {% elif object_type|lower == "inscription" %}
