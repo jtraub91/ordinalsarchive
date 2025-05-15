@@ -55,8 +55,6 @@ def index(request):
 
     mime_types = request.GET.getlist("mime_type")
     order = request.GET.get("order", "desc")
-    # sort = request.GET.get("sort", "date")
-    # view = request.GET.get("view", "gallery")
     filters = request.GET.getlist("filter")
     start = request.GET.get("start")
     end = request.GET.get("end")
@@ -89,7 +87,6 @@ def index(request):
 
     content_query = Q()
     if start is not None:
-        print(start)
         content_query &= Q(block_height__gte=int(start))
     if end is not None and end != "":
         content_query &= Q(block_height__lte=int(end))
@@ -330,7 +327,10 @@ def context(request, context_id: int):
         content.block.time, tz=timezone.utc
     ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    content_type = f"{content.mime_type}; "
+    content_type = content.mime_type
+    if content.mime_subtype:
+        content_type += f"/{content.mime_subtype}"
+    content_type += "; "
     for key, value in content.params.items():
         content_type += f"{key}={value}; "
     return render(

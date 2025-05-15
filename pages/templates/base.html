@@ -130,15 +130,7 @@
               </label>
             </div>
             <div class="flex flex-row">
-              <div class="my-0.5 hidden">
-                <label class="hidden" for="sort_select">
-                  Sort
-                </label>
-                <select name="sort" title="Sort By" id="sort_select" class="border-black border-2 p-0.5 appearance-none text-center bg-white text-sm dark:bg-zinc-900 text-black dark:text-white  dark:border-zinc-700">
-                  <option value="date" {% if request.GET.sort == "date" %}selected{% endif %}>timestamp</option>
-                  <option value="relevance" {% if request.GET.sort == "relevance" %}selected{% endif %}>relevance</option>
-                </select>
-              </div>
+              
               <div class="h-9 w-9 flex">
                 {% if request.GET.order == "asc" %}
                 <img class="mt-0 mr-0 ml-auto cursor-pointer transform triangle-svg-filter w-6 h-6" src="{% static 'images/triangle.svg' %}" title="sort" id="order_toggle"/>
@@ -153,16 +145,6 @@
                 <select name="order" id="order_select">
                   <option value="desc" {% if request.GET.order == "desc" %}selected{% endif %}>Descending</option>
                   <option value="asc" {% if request.GET.order == "asc" %}selected{% endif %}>Ascending</option>
-                </select>
-              </div>
-
-              <div class="my-0.5 hidden">
-                <label class="hidden" for="view_select">
-                  View
-                </label>
-                <select name="view" title="View" id="view_select" class="border-black border-2 p-0.5 appearance-none text-center bg-white text-sm dark:bg-zinc-900 text-black dark:text-white  dark:border-zinc-700">
-                  <option value="gallery" {% if request.GET.view == "gallery" %}selected{% endif %}>gallery</option>
-                  <option value="list" {% if request.GET.view == "list" %}selected{% endif %}>list</option>
                 </select>
               </div>
             </div>
