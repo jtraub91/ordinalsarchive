@@ -68,6 +68,7 @@ class ContextRevision(models.Model):
 class Content(models.Model):
     hash = models.BinaryField(unique=True)
     mime_type = models.CharField(db_index=True)
+    mime_subtype = models.CharField(null=True, db_index=True)
     size = models.IntegerField()
 
     params = models.JSONField()
@@ -81,7 +82,10 @@ class Content(models.Model):
     search_vector = SearchVectorField(null=True)
 
     block = models.ForeignKey(Block, on_delete=models.CASCADE)
-    block_time = models.BigIntegerField(default=0, db_index=True)
+    block_time = models.BigIntegerField(db_index=True)
+    block_height = models.IntegerField(null=True, db_index=True)
+
+    is_brc20 = models.BooleanField(null=True, db_index=True)
 
     context_revision = models.ForeignKey(
         ContextRevision, on_delete=models.CASCADE, null=True

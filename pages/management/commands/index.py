@@ -177,13 +177,15 @@ class Command(BaseCommand):
                                 hash=bits.crypto.hash256(
                                     block + coinbase_scriptsig_row.scriptsig
                                 ),
-                                mime_type="text/plain",
+                                mime_type="text",
                                 params={"charset": "utf-8"},
                                 size=len(coinbase_scriptsig_row.scriptsig_text),
                                 coinbase_scriptsig=coinbase_scriptsig_row,
                                 text=coinbase_scriptsig_row.scriptsig_text,
                                 block=block_row,
                                 block_time=block_row.time,
+                                block_height=block_row.blockheight,
+                                is_brc20=False,
                             )
                             content_row.save()
                             log.info(f"{content_row} saved to db.")
@@ -218,13 +220,15 @@ class Command(BaseCommand):
                             )
                             content_row = pages.models.Content(
                                 hash=bits.crypto.hash256(hash_preimage),
-                                mime_type="text/plain",
+                                mime_type="text",
                                 params={"charset": "utf-8"},
                                 size=len(opreturn_row.scriptpubkey_text),
                                 op_return=opreturn_row,
                                 text=opreturn_row.scriptpubkey_text,
                                 block=block_row,
                                 block_time=block_row.time,
+                                block_height=block_row.blockheight,
+                                is_brc20=False,
                             )
                             content_row.save()
                             log.info(f"{content_row} saved to db.")
@@ -334,9 +338,18 @@ class Command(BaseCommand):
                                     + b":"
                                     + content
                                 )
+                                if isinstance(json_data, dict):
+                                    is_brc20 = (
+                                        True
+                                        if json_data.get("p") == "brc-20"
+                                        else False
+                                    )
+                                else:
+                                    is_brc20 = False
                                 content_row = pages.models.Content(
                                     hash=bits.crypto.hash256(hash_preimage),
-                                    mime_type=f"{mime_type}/{mime_subtype}",
+                                    mime_type=mime_type,
+                                    mime_subtype=mime_subtype,
                                     size=content_size,
                                     params=mime_params,
                                     inscription=inscription_row,
@@ -347,6 +360,8 @@ class Command(BaseCommand):
                                     ),
                                     block=block_row,
                                     block_time=block_row.time,
+                                    block_height=block_row.blockheight,
+                                    is_brc20=is_brc20,
                                 )
                                 content_row.save()
                                 log.info(f"{content_row} saved to db.")

@@ -1,0 +1,267 @@
+<div class="block-range-slider w-full">
+  
+  <div class="relative h-6">
+    <div class="absolute w-full h-1 top-1/2 -translate-y-1/2 bg-gray-300 dark:bg-green-500 rounded-sm" id="background-track"></div>
+    <div class="absolute h-1 top-1/2 -translate-y-1/2 bg-black dark:bg-pink-500 rounded-sm" id="active-track"></div>
+    <div class="absolute w-4 h-4 bg-white border-2 border-black dark:border-pink-500 dark:bg-black cursor-pointer"
+      id="start-handle"></div>
+    <div class="absolute w-4 h-4 bg-white border-2 border-black dark:border-pink-500 dark:bg-black cursor-pointer"
+      id="end-handle"></div>
+  </div>
+  <div class="flex justify-between items-center mb-2">
+    <div class="text-sm font-mono flex items-center">
+      <span class="text-xs"
+        id="start-block-value">
+        0
+      </span>
+      <input type="hidden" name="start" id="start-block-input" value="0">
+    </div>
+    <div class="text-sm font-mono flex items-center">
+      <span class="text-xs" id="end-block-value">∞</span>
+      <input type="hidden" name="end" id="end-block-input" value="">
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom styles for the double range slider */
+  .block-range-slider {
+    --slider-height: 1rem;
+    --handle-size: 1rem;
+    --track-height: 0.25rem;
+  }
+  
+  #active-track {
+    left: 0.5rem; /* Half the handle size */
+    right: 0.5rem; /* Will be updated by JS */
+    width: calc(100% - 1rem); /* Initial width, will be updated by JS */
+  }
+  
+  #start-handle {
+    left: 0; /* Will be updated by JS */
+    z-index: 10;
+  }
+  
+  #end-handle {
+    right: 0; /* Will be updated by JS */
+    left: auto;
+    z-index: 10;
+  }
+  /* Block Range Slider CSS */
+
+  .block-range-slider {
+    --slider-height: 1.5rem;
+    --handle-size: 1rem;
+    --track-height: 0.25rem;
+    --track-color-light: #000000;
+    --track-color-dark: #ec4899; /* pink-500 */
+    --bg-color-light: #d1d5db; /* gray-300 */
+    --bg-color-dark: #10b981; /* green-500 */
+    position: relative;
+    width: 100%;
+    padding: 0.5rem 0;
+  }
+
+  /* Slider container */
+  .block-range-slider .relative {
+    position: relative;
+    height: var(--slider-height);
+    margin: 0.5rem 0;
+  }
+
+  /* Background track */
+  .block-range-slider .relative div:nth-child(1) {
+    position: absolute;
+    width: 100%;
+    height: var(--track-height);
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--bg-color-light);
+    border-radius: 0.125rem;
+  }
+
+  /* Active track */
+  #active-track {
+    position: absolute;
+    height: var(--track-height);
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--track-color-light);
+    border-radius: 0.125rem;
+    left: 0.5rem;
+    width: calc(100% - 1rem);
+  }
+
+  .dark #active-track {
+    background-color: var(--track-color-dark);
+  }
+
+  /* Slider handles */
+  #start-handle, #end-handle {
+    position: absolute;
+    width: var(--handle-size);
+    height: var(--handle-size);
+    top: 50%;
+    transform: translateY(-50%);
+    /* background-color: var(--track-color-light); */
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  #start-handle {
+    left: 0;
+  }
+
+  #end-handle {
+    right: 0;
+    left: auto;
+  }
+
+  /* Value display */
+  .block-range-slider .flex.justify-between {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const startHandle = document.getElementById('start-handle');
+    const endHandle = document.getElementById('end-handle');
+    const activeTrack = document.getElementById('active-track');
+    const startBlockInput = document.getElementById('start-block-input');
+    const endBlockInput = document.getElementById('end-block-input');
+    const startBlockValue = document.getElementById('start-block-value');
+    const endBlockValue = document.getElementById('end-block-value');
+    const sliderContainer = startHandle.parentElement;
+    const sliderRect = sliderContainer.getBoundingClientRect();
+    const sliderWidth = sliderRect.width;
+
+    // Set initial positions
+    let startPos = 0;
+    let endPos = sliderWidth;
+    
+    // Get initial values from URL params if they exist
+    const urlParams = new URLSearchParams(window.location.search);
+    const startParam = urlParams.get('start') || 0;
+    const endParam = urlParams.get('end');
+
+    var blockHeight = undefined;
+    fetch("/block_height").then(response => response.json()).then(data => {
+      blockHeight = data.block_height;
+
+      startBlockInput.value = startParam;
+      startBlockValue.textContent = startParam;
+      startPos = (parseInt(startParam) / blockHeight) * sliderWidth;
+
+      if (endParam !== null) {
+        endBlockInput.value = endParam;
+        endBlockValue.textContent = endParam;
+        endPos = (parseInt(endParam) / blockHeight) * sliderWidth;
+      } else {
+        endPos = sliderWidth;
+        endBlockInput.value = "";
+        endBlockValue.textContent = '∞';
+      }
+    });
+    
+    // Update positions
+    updatePositions();
+    
+    // Handle dragging
+    let isDragging = false;
+    let currentHandle = null;
+    
+    function startDrag(e, handle) {
+      isDragging = true;
+      currentHandle = handle;
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', stopDrag);
+      document.addEventListener('touchmove', drag);
+      document.addEventListener('touchend', stopDrag);
+    }
+    
+    function drag(e) {
+      if (!isDragging) return;
+      
+      const sliderRect = sliderContainer.getBoundingClientRect();
+      const sliderLeft = sliderRect.left;
+      const sliderWidth = sliderRect.width;
+      
+      // Get position relative to slider
+      let clientX = e.clientX;
+      if (e.type === 'touchmove') {
+        clientX = e.touches[0].clientX;
+      }
+      
+      let newPos = clientX - sliderLeft;
+      newPos = Math.max(0, Math.min(newPos, sliderWidth));
+      
+      // Update position and value
+      if (currentHandle === startHandle) {
+        if (newPos < endPos - 20) { // Prevent handles from crossing
+          startPos = newPos;
+          // Calculate block value (0 to ~800k)
+          const blockValue = Math.round((newPos / sliderWidth) * blockHeight);
+          startBlockInput.value = blockValue;
+          startBlockValue.textContent = blockValue;
+          startBlockValue.classList.remove('hidden');
+        }
+      } else if (currentHandle === endHandle) {
+        if (newPos > startPos + 20) { // Prevent handles from crossing
+          endPos = newPos;
+          // Calculate block value (0 to ~800k)
+          const blockValue = Math.round((newPos / sliderWidth) * blockHeight);
+          endBlockInput.value = blockValue;
+          endBlockValue.textContent = blockValue;
+          endBlockValue.classList.remove('hidden');
+        }
+      }
+      
+      updatePositions();
+      
+      // Trigger form change event for htmx
+      const event = new Event('change', { bubbles: true });
+      startBlockInput.dispatchEvent(event);
+    }
+    
+    function stopDrag() {
+      isDragging = false;
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', stopDrag);
+      document.removeEventListener('touchmove', drag);
+      document.removeEventListener('touchend', stopDrag);
+    }
+    
+    function updatePositions() {
+      // Update handle positions
+      startHandle.style.left = `${startPos}px`;
+      endHandle.style.left = `${endPos}px`;
+      
+      // Update active track
+      activeTrack.style.left = `${startPos}px`;
+      activeTrack.style.width = `${endPos - startPos}px`;
+    }
+    
+    startHandle.addEventListener('mousedown', function(e) {
+      startDrag(e, startHandle);
+    });
+    
+    endHandle.addEventListener('mousedown', function(e) {
+      startDrag(e, endHandle);
+    });
+    
+    // Touch support
+    startHandle.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      startDrag(e, startHandle);
+    });
+    
+    endHandle.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      startDrag(e, endHandle);
+    });
+  });
+</script>

@@ -30,6 +30,19 @@ from .utils import get_object_from_s3, get_object_head_from_s3, readable_size
 log = logging.getLogger(__name__)
 
 
+def block_height(request):
+    latest_block = models.Block.objects.order_by("-blockheight").first()
+    return JsonResponse(
+        {
+            "block_height": latest_block.blockheight,
+            "block_time": latest_block.time,
+            "block_timestamp": datetime.fromtimestamp(
+                latest_block.time, tz=timezone.utc
+            ).strftime("%Y-%m-%d %H:%M:%S %Z"),
+        }
+    )
+
+
 def content_types(request):
     # mime_type in the content model is actually {mime_type}/{mime_subtype}
     # TODO: content model needs to be reworked or removed, but maybe can eventually be refactored for search indexing
@@ -45,8 +58,8 @@ def index(request):
     # sort = request.GET.get("sort", "date")
     # view = request.GET.get("view", "gallery")
     filters = request.GET.getlist("filter")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
+    start = request.GET.get("start")
+    end = request.GET.get("end")
     query = request.GET.get("q")
 
     content_query = Q()
@@ -55,31 +68,32 @@ def index(request):
             kwarg = {f"{filter_}__isnull": True}
             content_query &= Q(**kwarg)
         elif filter_ == "brc-20":
-            content_query &= ~Q(inscription__json__p="brc-20")
-        else:
-            # mime_type
-            content_query &= ~Q(mime_type=filter_)
-    content_objects = models.Content.objects.filter(content_query)
+            content_query &= Q(is_brc20=False)
+    content_objects = models.Content.objects.filter(content_query).select_related(
+        "inscription", "op_return", "coinbase_scriptsig"
+    )
 
     content_query = Q()
     if mime_types:
         for mime_type in mime_types:
-            content_query |= Q(mime_type__startswith=mime_type)
+            if mime_type == "other":
+                content_query |= (
+                    ~Q(mime_type="text")
+                    & ~Q(mime_type="image")
+                    & ~Q(mime_type="audio")
+                    & ~Q(mime_type="video")
+                )
+            else:
+                content_query |= Q(mime_type=mime_type)
         content_objects = content_objects.filter(content_query)
 
     content_query = Q()
-    if start_date:
-        try:
-            start_timestamp = datetime.fromisoformat(start_date).timestamp()
-            content_query &= Q(block__time__gte=int(start_timestamp))
-        except ValueError:
-            pass
-    if end_date:
-        try:
-            end_timestamp = datetime.fromisoformat(end_date).timestamp()
-            content_query &= Q(block__time__lte=int(end_timestamp))
-        except ValueError:
-            pass
+    if start is not None:
+        print(start)
+        content_query &= Q(block_height__gte=int(start))
+    if end is not None and end != "":
+        content_query &= Q(block_height__lte=int(end))
+    content_objects = content_objects.filter(content_query)
 
     if query:
         search_query = SearchQuery(query, config="english")
@@ -133,8 +147,8 @@ def index(request):
         results.append(
             {
                 "object_type": object_type,
-                "mime_type": obj.mime_type.split("/")[0],
-                "mime_subtype": obj.mime_type.split("/")[1],
+                "mime_type": obj.mime_type,
+                "mime_subtype": obj.mime_subtype,
                 "url": url,
                 "filename": filename,
                 "text": text,

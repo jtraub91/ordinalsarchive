@@ -24,12 +24,6 @@ document.querySelector('#filters_toggle').addEventListener('click', function(eve
   document.getElementById('filters').classList.toggle('hidden');
 });
 
-document.addEventListener('click', function(event) {
-  if (!document.getElementById('filters').contains(event.target) && !document.getElementById('filters').classList.contains('hidden')) {
-    document.getElementById('filters').classList.toggle('hidden');
-  }
-});
-
 document.getElementById('filters_close').addEventListener('click', function() {
   document.getElementById('filters').classList.add('hidden');
 });

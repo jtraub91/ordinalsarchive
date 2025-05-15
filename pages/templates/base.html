@@ -10,7 +10,6 @@
     <link href="{% static 'dist/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
     <link href="{% static 'dist/quill/quill.snow.css' %}" rel="stylesheet">
     <link href="{% static 'css/main.css' %}" rel="stylesheet">
-
     <script>
       (function() {
         const userPref = localStorage.getItem('theme');
@@ -44,46 +43,21 @@
               type="text" placeholder="search the Bitcoin blockchain"/>
           </div>
           <div class="flex flex-row justify-between w-full absolute text-sm md:text-lg top-full">
-            <div class="flex" >
+            <div class="flex">
               <div class="flex cursor-pointer" id="filters_toggle">
                 <i class="fa-solid fa-filter text-2xl" title="filters"></i>
               </div>
               <div class="flex cursor-pointer hidden">
                 <i class="fa-solid fa-magnifying-glass m-auto" title="calendar"></i>
               </div>
-              <div id="filters" class="hidden absolute border-2 border-black dark:border-indigo-500 top-8 bg-white dark:bg-black shadow-lg p-5 z-50">
+              <div id="filters" class="hidden absolute mx-auto min-w-48 sm:min-w-64 border-2 border-black dark:border-indigo-500 top-8 bg-white dark:bg-black shadow-lg p-5 z-50">
                 <div class="absolute top-1 right-1 flex cursor-pointer" id="filters_close">
                   <i class="fa-solid fa-xmark"></i>
                 </div>
-                <div class="hidden">
-                  <input type="date" name="start_date" 
-                    min="2009-01-03"
-                    value="{{ request.GET.start_date|default_if_none:'' }}"/>
-                  <input type="date" name="end_date" 
-                    min="2009-01-03"
-                    value="{{ request.GET.end_date|default_if_none:'' }}"/>
+                <div>
+                  {% include "components/block_range_slider.html" %}
                 </div>
                 <ul class="flex flex-col">
-                  <li>
-                    <input class="hidden peer"
-                      {% if 'inscription' in query_object_types %}checked{% endif %}
-                      type="checkbox"
-                      name="filter"
-                      value="inscription" 
-                      id="filter_inscription">
-                    <label for="filter_inscription" class="font-normal cursor-pointer peer-checked:line-through pr-2">
-                      Inscription
-                    </label>
-                  </li>
-                  <li>
-                    <input class="hidden peer"
-                      {% if 'brc-20' in query_object_types %}checked{% endif %}
-                      type="checkbox"
-                      name="filter" value="brc-20" id="filter_brc20">
-                    <label for="filter_brc20" class="font-normal cursor-pointer peer-checked:line-through pr-2">
-                      BRC-20
-                    </label>
-                  </li>
                   <li>
                     <input class="hidden peer"
                       {% if 'coinbase' in query_object_types %}checked{% endif %}
@@ -106,7 +80,28 @@
                       OpReturn
                     </label>
                   </li>
+                  <li>
+                    <input class="hidden peer"
+                      {% if 'inscription' in query_object_types %}checked{% endif %}
+                      type="checkbox"
+                      name="filter"
+                      value="inscription" 
+                      id="filter_inscription">
+                    <label for="filter_inscription" class="font-normal cursor-pointer peer-checked:line-through pr-2">
+                      Inscription
+                    </label>
+                  </li>
+                  <li>
+                    <input class="hidden peer"
+                      {% if 'brc-20' in query_object_types %}checked{% endif %}
+                      type="checkbox"
+                      name="filter" value="brc-20" id="filter_brc20">
+                    <label for="filter_brc20" class="font-normal cursor-pointer peer-checked:line-through pr-2">
+                      BRC-20
+                    </label>
+                  </li>
                 </ul>
+                
                 <!-- <div class="hidden" id="content_types_container" hx-push-url="false" hx-trigger="load" hx-get="/content_types" hx-target="#content_types_container" hx-swap="innerHTML"></div> -->
               </div>
             </div>
