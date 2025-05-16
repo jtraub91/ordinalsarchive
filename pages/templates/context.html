@@ -20,7 +20,9 @@
       {% elif mime_type == "audio" %}
       <audio src="{{ MEDIA_URL }}{{ content.inscription.filename }}" controls></audio>
       {% elif mime_type == "video" %}
-      <video src="{{ MEDIA_URL }}{{ content.inscription.filename }}" controls></video>
+      <div class="w-full">
+        <video class="w-full" src="{{ MEDIA_URL }}{{ content.inscription.filename }}" controls></video>
+      </div>
       {% elif mime_type == "text" %}
       {% if content.mime_type == "text/html" %}
       <div class="w-full">
