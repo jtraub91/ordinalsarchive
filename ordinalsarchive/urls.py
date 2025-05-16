@@ -27,7 +27,7 @@ urlpatterns = [
     path("context/<int:context_id>", views.context),
     path("context/revision/<int:context_id>", views.context_revision),
     path("content_types", views.content_types),
-    path("block_height", views.block_height),
+    path("block_info", views.block_info),
     path("lit", views.lit),
     path("bit", views.bit),
     path("media/<str:filename>", views.media),

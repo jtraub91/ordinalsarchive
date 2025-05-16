@@ -54,8 +54,8 @@
                 <div class="absolute top-1 right-1 flex cursor-pointer" id="filters_close">
                   <i class="fa-solid fa-xmark"></i>
                 </div>
-                <div>
-                  {% include "components/block_range_slider.html" %}
+                <div id="block-range-slider">
+                  <!-- React Block Range Slider will mount here -->
                 </div>
                 <ul class="flex flex-col">
                   <li>
@@ -167,6 +167,7 @@
     <script src="{% static 'dist/htmx.min.js' %}"></script>
     <script src="{% static 'dist/quill/quill.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'dist/blockRangeSlider.js' %}"></script>
     {% endblock %}
   </body>
 </html>

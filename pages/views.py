@@ -30,15 +30,26 @@ from .utils import get_object_from_s3, get_object_head_from_s3, readable_size
 log = logging.getLogger(__name__)
 
 
-def block_height(request):
-    latest_block = models.Block.objects.order_by("-blockheight").first()
+def block_info(request):
+    blockheight = request.GET.get("blockheight")
+    if blockheight:
+        try:
+            blockheight = int(blockheight)
+        except ValueError:
+            blockheight = None
+    if blockheight is None:
+        block = models.Block.objects.order_by("-blockheight").first()
+    else:
+        block = models.Block.objects.filter(blockheight=blockheight).first()
     return JsonResponse(
         {
-            "block_height": latest_block.blockheight,
-            "block_time": latest_block.time,
-            "block_timestamp": datetime.fromtimestamp(
-                latest_block.time, tz=timezone.utc
-            ).strftime("%Y-%m-%d %H:%M:%S %Z"),
+            "block_height": block.blockheight if block else None,
+            "block_time": block.time if block else None,
+            "block_timestamp": (
+                datetime.fromtimestamp(block.time, tz=timezone.utc).strftime("%Y-%m-%d")
+                if block
+                else "????/??/??"
+            ),
         }
     )
 
