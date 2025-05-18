@@ -92,7 +92,43 @@ class Content(models.Model):
     )
 
     class Meta:
-        indexes = [GinIndex(fields=["search_vector"])]
+        indexes = [
+            # Full-text search index
+            GinIndex(fields=["search_vector"]),
+            # Composite indexes for common query patterns
+            models.Index(
+                fields=["block_height", "mime_type"], name="content_bh_mime_idx"
+            ),
+            models.Index(
+                fields=["mime_type", "block_height"], name="content_mime_bh_idx"
+            ),
+            # Index for filtering by content type and ordering
+            models.Index(
+                fields=[
+                    "coinbase_scriptsig",
+                    "op_return",
+                    "inscription",
+                    "is_brc20",
+                    "block_height",
+                ],
+                name="content_type_bh_idx",
+            ),
+            # Partial indexes for specific content types
+            models.Index(
+                fields=["block_height", "block_time"],
+                name="content_inscriptions_idx",
+                condition=models.Q(
+                    inscription__isnull=False,
+                    coinbase_scriptsig__isnull=True,
+                    op_return__isnull=True,
+                ),
+            ),
+            models.Index(
+                fields=["block_height", "block_time"],
+                name="content_not_brc20_idx",
+                condition=models.Q(is_brc20=False),
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if self.context_revision_id is None:
