@@ -60,7 +60,7 @@
                 <ul class="flex flex-col">
                   <li>
                     <input class="hidden peer"
-                      {% if 'coinbase' in query_object_types %}checked{% endif %}
+                      {% if 'coinbase_scriptsig' in request.GET.getlist.filter %}checked{% endif %}
                       type="checkbox"
                       name="filter"
                       value="coinbase_scriptsig" 
@@ -71,7 +71,7 @@
                   </li>
                   <li>
                     <input class="hidden peer"
-                      {% if 'op_return' in query_object_types %}checked{% endif %}
+                      {% if 'op_return' in request.GET.getlist.filter %}checked{% endif %}
                       type="checkbox"
                       name="filter"
                       value="op_return" 
@@ -82,7 +82,7 @@
                   </li>
                   <li>
                     <input class="hidden peer"
-                      {% if 'inscription' in query_object_types %}checked{% endif %}
+                      {% if 'inscription' in request.GET.getlist.filter %}checked{% endif %}
                       type="checkbox"
                       name="filter"
                       value="inscription" 
@@ -93,7 +93,7 @@
                   </li>
                   <li>
                     <input class="hidden peer"
-                      {% if 'brc-20' in query_object_types %}checked{% endif %}
+                      {% if 'brc-20' in request.GET.getlist.filter %}checked{% endif %}
                       type="checkbox"
                       name="filter" value="brc-20" id="filter_brc20">
                     <label for="filter_brc20" class="font-normal cursor-pointer peer-checked:line-through pr-2">
@@ -108,11 +108,15 @@
             <div class="grow flex text-xl">
               <label class="ml-auto"
                 for="mime_type_text" title="text">
-                <input class="hidden peer" type="checkbox" name="mime_type" value="text" id="mime_type_text">
+                <input 
+                  {% if 'text' in request.GET.getlist.mime_type %}checked{% endif %}
+                  class="hidden peer" type="checkbox" name="mime_type" value="text" id="mime_type_text">
                 <i class="fa-solid fa-font sm:w-8 h-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_image" title="image">
-                <input class="hidden peer" type="checkbox" name="mime_type" value="image" id="mime_type_image">
+                <input 
+                  {% if 'image' in request.GET.getlist.mime_type %}checked{% endif %}
+                  class="hidden peer" type="checkbox" name="mime_type" value="image" id="mime_type_image">
                 <i class="fa-regular fa-image sm:w-8 sm:h-8 p-1 cursor-pointer text-center hover:backdrop-invert-0 hover:invert peer-checked:backdrop-invert-0 peer-checked:invert"></i>
               </label>
               <label for="mime_type_audio" title="audio">

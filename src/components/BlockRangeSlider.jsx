@@ -86,7 +86,7 @@ const BlockRangeSlider = () => {
     setStartValue(startBlock);
     
     // Fetch timestamp for start block (specifically handle block 0)
-    fetchBlockTimestamp(startBlock);
+    // fetchBlockTimestamp(startBlock);
 
     // Set end position and value based on URL param or default to infinity
     if (endParam !== null && endParam !== '') {
@@ -94,12 +94,12 @@ const BlockRangeSlider = () => {
       const endPercentage = (endBlock / maxHeight) * 100;
       setEndPct(endPercentage);
       setEndValue(endBlock);
-      fetchBlockTimestamp(endBlock);
+      // fetchBlockTimestamp(endBlock);
     } else {
       setEndPct(100);
       setEndValue('∞');
       // Fetch latest block timestamp for infinity
-      fetchBlockTimestamp(null, true);
+      // fetchBlockTimestamp(null, true);
     }
   };
 
@@ -122,18 +122,18 @@ const BlockRangeSlider = () => {
   }, [startValue, endValue]);
 
   // Fetch timestamps when block values change
-  useEffect(() => {
-    fetchBlockTimestamp(startValue);
-  }, [startValue]);
+  // useEffect(() => {
+  //   fetchBlockTimestamp(startValue);
+  // }, [startValue]);
 
-  useEffect(() => {
-    if (endValue === '∞') {
-      // Fetch latest block timestamp for infinity
-      fetchBlockTimestamp(null, true);
-    } else {
-      fetchBlockTimestamp(endValue);
-    }
-  }, [endValue]);
+  // useEffect(() => {
+  //   if (endValue === '∞') {
+  //     // Fetch latest block timestamp for infinity
+  //     // fetchBlockTimestamp(null, true);
+  //   } else {
+  //     fetchBlockTimestamp(endValue);
+  //   }
+  // }, [endValue]);
 
   const handleMouseDown = (e, handle) => {
     setIsDragging(true);
@@ -187,14 +187,6 @@ const BlockRangeSlider = () => {
     };
   }, [isDragging, startPct, endPct, blockchainHeight]);
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="w-full py-2">
-        <div className="text-center text-sm">...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full py-2">
@@ -251,19 +243,6 @@ const BlockRangeSlider = () => {
         ></div>
       </div>
       
-      {/* Datetime display */}
-      <div className="mt-1">
-        <div className="text-xs font-mono text-black dark:text-white">
-          {startDateTime ? startDateTime : '...'}
-        </div>
-        <div className="flex w-full mt-1">
-          <span className="text-xs font-mono text-black dark:text-white ml-auto">
-            {endDateTime ? endDateTime : (endValue === '∞' ? '' : '...')}
-          </span>
-        </div>
-      </div>
-      
-      {/* Hidden form inputs */}
       <div className="hidden">
         <input 
           type="hidden" 
