@@ -941,11 +941,6 @@
       }
     }
   }
-  .sm\:h-8 {
-    @media (width >= 40rem) {
-      height: calc(var(--spacing) * 8);
-    }
-  }
   .sm\:w-8 {
     @media (width >= 40rem) {
       width: calc(var(--spacing) * 8);

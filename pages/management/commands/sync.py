@@ -31,9 +31,14 @@ class Command(BaseCommand):
             req = requests.get(f"https://mempool.space/api/blocks/tip/height")
             blockchain_height = int(req.text)
             log.info(f"Blockchain height per mempool.space: {blockchain_height}")
-            try:
-                call_command("index", blockchain_height, reupload_s3=True)
-            except Exception as e:
-                log.error(f"Failed to index block {blockchain_height}: {e}")
+            current_blockheight = (
+                Block.objects.order_by("-blockheight").first().blockheight
+            )
+            log.info(f"Local blockchain height: {current_blockheight}")
+            if current_blockheight < blockchain_height:
+                try:
+                    call_command("index", blockchain_height, reupload_s3=True)
+                except Exception as e:
+                    log.error(f"Failed to index block {blockchain_height}: {e}")
             log.info("Sleeping for 60 seconds...")
             time.sleep(60)
